@@ -14,7 +14,7 @@ Mục tiêu: thực hành quy trình làm việc nhóm theo chuẩn open source 
 | --- | --------------- | ------- | ------------------- |
 | 1 | [@JXFalcon](https://github.com/JXFalcon) | Nhóm trưởng / Owner | Điều phối chung, quản lý repo, review PR |
 | 2 | [@Khanhne-3112](https://github.com/Khanhne-3112) | Thành viên / Collaborator | Phát triển tính năng, viết tài liệu |
-| 3 | Thành viên 3 (chờ cập nhật username) | Thành viên | Phát triển tính năng, kiểm thử |
+| 3 | [@htclhtcl](https://github.com/htclhtcl) | Thành viên / Collaborator | Phát triển tính năng, kiểm thử |
 
 ## 🛠️ Công nghệ sử dụng
 
