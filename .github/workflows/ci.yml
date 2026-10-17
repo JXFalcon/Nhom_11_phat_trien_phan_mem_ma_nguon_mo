@@ -21,12 +21,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          # Không bật cache: 'npm' vì repo chưa có package-lock.json.
+          # actions/setup-node sẽ báo lỗi "Dependencies lock file is not found"
+          # khi bật cache mà thiếu file lock. Khi nhóm bổ sung package-lock.json
+          # (chạy `npm install` rồi commit file này) thì thêm lại dòng:
+          #   cache: 'npm'
 
-      - name: Cài đặt phụ thuộc
-        run: npm ci
+      - name: Cài đặt và kiểm thử (Node.js)
+        if: ${{ hashFiles('package.json') != '' }}
+        run: |
+          npm ci
+          npm test
         continue-on-error: true
 
-      - name: Chạy kiểm thử
-        run: npm test
-        continue-on-error: true
+      - name: Bỏ qua — repo chưa có package.json
+        if: ${{ hashFiles('package.json') == '' }}
+        run: echo "Chưa có package.json, bỏ qua bước cài đặt và test."
