@@ -10,11 +10,13 @@ Mục tiêu: thực hành quy trình làm việc nhóm theo chuẩn open source 
 
 ## 👥 Thành viên nhóm
 
-| STT | Username GitHub | Vai trò | Phần việc phụ trách |
-| --- | --------------- | ------- | ------------------- |
-| 1 | [@JXFalcon](https://github.com/JXFalcon) | Nhóm trưởng / Owner | Điều phối chung, quản lý repo, review PR |
-| 2 | [@Khanhne-3112](https://github.com/Khanhne-3112) | Thành viên / Collaborator | Phát triển tính năng, viết tài liệu |
-| 3 | [@htclhtcl](https://github.com/htclhtcl) | Thành viên / Collaborator | Phát triển tính năng, kiểm thử |
+| STT | Username GitHub | Vai trò trong nhóm | Quyền GitHub | Phần việc phụ trách |
+| --- | --------------- | ------------------ | ------------ | ------------------- |
+| 1 | [@htclhtcl](https://github.com/htclhtcl) | Nhóm trưởng | Collaborator (write) | Điều phối, phân công nhiệm vụ, review PR, quản lý tiến độ |
+| 2 | [@JXFalcon](https://github.com/JXFalcon) | Thành viên | Owner của repo (admin) | Quản lý repo, cấu hình CI, hạ tầng |
+| 3 | [@Khanhne-3112](https://github.com/Khanhne-3112) | Thành viên | Collaborator (write) | Phát triển tính năng, viết tài liệu |
+
+> 📝 Lưu ý: repo hiện do `JXFalcon` làm **chủ sở hữu (owner) trên GitHub**, còn **nhóm trưởng** của nhóm là `htclhtcl` — hai vai trò này độc lập, không đồng nhất với nhau.
 
 ## 🛠️ Công nghệ sử dụng
 
