@@ -1,68 +1,31 @@
-# Nhom_BTL_phat_trien_phan_mem_ma_nguon_mo
+# Lab 02 — Xây dựng module php kiểm tra điều kiện đăng ký
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+Mã mẫu cho phần hướng dẫn và mã khởi đầu cho bài tự làm.
 
-Repo bài tập lớn môn **Phát triển phần mềm mã nguồn mở** (Open Source Software Development).
-Mục tiêu: thực hành quy trình làm việc nhóm theo chuẩn open source (branch, commit, pull request, review, CI) kết hợp phát triển một sản phẩm phần mềm hoàn chỉnh.
+## Mở bài
 
-> ⚠️ Đây là repo khởi tạo. Các mục `Công nghệ sử dụng`, `Cài đặt & Chạy`, `Cấu trúc thư mục` sẽ được cập nhật sau khi nhóm chốt đề tài và ngôn ngữ.
-
-## 👥 Thành viên nhóm
-
-| STT | Username GitHub | Vai trò trong nhóm | Quyền GitHub | Phần việc phụ trách |
-| --- | --------------- | ------------------ | ------------ | ------------------- |
-| 1 | [@htclhtcl](https://github.com/htclhtcl) | Nhóm trưởng | Collaborator (write) | Điều phối, phân công nhiệm vụ, review PR, quản lý tiến độ |
-| 2 | [@JXFalcon](https://github.com/JXFalcon) | Thành viên | Owner của repo (admin) | Quản lý repo, cấu hình CI, hạ tầng |
-| 3 | [@Khanhne-3112](https://github.com/Khanhne-3112) | Thành viên | Collaborator (write) | Phát triển tính năng, viết tài liệu |
-
-> 📝 Lưu ý: repo hiện do `JXFalcon` làm **chủ sở hữu (owner) trên GitHub**, còn **nhóm trưởng** của nhóm là `htclhtcl` — hai vai trò này độc lập, không đồng nhất với nhau.
-
-## 🛠️ Công nghệ sử dụng
-
-> Placeholder — cập nhật khi nhóm chốt đề tài.
-
-- Ngôn ngữ: _đang cập nhật_
-- Framework / Thư viện: _đang cập nhật_
-- Cơ sở dữ liệu: _đang cập nhật_
-- Công cụ hỗ trợ: Git, GitHub Actions, _đang cập nhật_
-
-## 🚀 Cài đặt & Chạy
-
-> Placeholder — cập nhật khi có mã nguồn.
+Mở terminal Ubuntu/WSL tại thư mục chứa `lab.sh`. Dùng PHP từ 8.1 và Git. Hướng dẫn chi tiết, sơ đồ, đoạn mã cần sửa, dữ liệu đối chiếu và rubric nằm trong tài liệu của bài lab.
 
 ```bash
-# 1. Clone repo
-git clone https://github.com/JXFalcon/Nhom_BTL_phat_trien_phan_mem_ma_nguon_mo.git
-cd Nhom_BTL_phat_trien_phan_mem_ma_nguon_mo
-
-# 2. Cài đặt phụ thuộc
-# (ví dụ: npm install | pip install -r requirements.txt | mvn install)
-
-# 3. Chạy chương trình
-# (ví dụ: npm start | python main.py)
+bash lab.sh check
+bash lab.sh run
 ```
 
-## 📁 Cấu trúc thư mục
+Chương trình in kết quả ngay trong terminal.
 
-> Placeholder — cập nhật theo cấu trúc thực tế.
+Bài này không cần PostgreSQL, Composer hoặc framework.
 
-```text
-Nhom_BTL_phat_trien_phan_mem_ma_nguon_mo/
-├── .github/
-│   ├── workflows/
-│   │   └── ci.yml
-│   └── pull_request_template.md
-├── .gitignore
-├── CONTRIBUTING.md
-├── LICENSE
-└── README.md
+## Kiểm tra bài
+
+```bash
+bash lab.sh test
+bash lab.sh extend
 ```
 
-## 🤝 Đóng góp
+`test` kiểm tra phần mẫu; `extend` kiểm tra phần tự làm. Các vị trí TODO là nhiệm vụ cần hoàn thiện; không sửa test để bỏ qua lỗi.
 
-Vui lòng đọc [CONTRIBUTING.md](CONTRIBUTING.md) để biết quy trình làm việc nhóm (branch, commit, pull request, review) trước khi đóng góp.
+Kết quả mở rộng cần đạt: `TESTS=9 FAILED=0`. Có lớp kiểm tra sức chứa, chương trình gọi lớp và lớp mở rộng trả confirmed, waiting hoặc rejected theo quy tắc đã công bố; bộ kiểm thử mở rộng có thêm ca tự viết cho sự kiện đóng khi đã đầy và danh sách chờ đang bật.
 
-## 📄 Giấy phép
+## Tệp nộp
 
-Dự án phát hành theo giấy phép [MIT](LICENSE).
+Giữ mã nguồn, dữ liệu mẫu và kiểm thử. Ghi lại lệnh chạy trong README. Không đưa `.local`, mật khẩu hoặc dữ liệu cá nhân thật vào kho mã và gói nộp. Nộp đúng commit theo yêu cầu của bài; nếu dùng Actions, đính kèm lần chạy tương ứng.
