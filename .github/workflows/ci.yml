@@ -9,31 +9,58 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build & Test
+  test:
+    name: PHP 8.2 – Lint & Smoke
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout mã nguồn
         uses: actions/checkout@v4
 
-      - name: Cài đặt Node.js 20
-        uses: actions/setup-node@v4
+      - name: Cài đặt PHP 8.2
+        uses: shivammathur/setup-php@v2
         with:
-          node-version: '20'
-          # Không bật cache: 'npm' vì repo chưa có package-lock.json.
-          # actions/setup-node sẽ báo lỗi "Dependencies lock file is not found"
-          # khi bật cache mà thiếu file lock. Khi nhóm bổ sung package-lock.json
-          # (chạy `npm install` rồi commit file này) thì thêm lại dòng:
-          #   cache: 'npm'
+          php-version: '8.2'
+          extensions: mbstring, pdo_mysql
+          coverage: none
 
-      - name: Cài đặt và kiểm thử (Node.js)
-        if: ${{ hashFiles('package.json') != '' }}
+      - name: Kiểm tra cú pháp toàn bộ file PHP
+        shell: bash
         run: |
-          npm ci
-          npm test
-        continue-on-error: true
+          set -euo pipefail
+          has_error=0
+          while IFS= read -r -d '' file; do
+            if ! php -l "$file"; then
+              has_error=1
+            fi
+          done < <(find . -type f -name '*.php' -not -path './vendor/*' -print0)
+          if [ "$has_error" -ne 0 ]; then
+            echo "Phát hiện lỗi cú pháp PHP." >&2
+            exit 1
+          fi
 
-      - name: Bỏ qua — repo chưa có package.json
-        if: ${{ hashFiles('package.json') == '' }}
-        run: echo "Chưa có package.json, bỏ qua bước cài đặt và test."
+      - name: Smoke check router.php và trang chủ
+        shell: bash
+        run: |
+          set -euo pipefail
+          php -S 127.0.0.1:8000 router.php > /tmp/orderflow-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          ok=0
+          for _ in $(seq 1 20); do
+            if curl -fsS -o /tmp/orderflow-home.html http://127.0.0.1:8000/; then
+              ok=1
+              break
+            fi
+            sleep 0.5
+          done
+
+          if [ "$ok" -ne 1 ]; then
+            echo "Không truy cập được trang chủ qua router.php." >&2
+            cat /tmp/orderflow-server.log >&2 || true
+            exit 1
+          fi
+
+          grep -q "OrderFlow" /tmp/orderflow-home.html
+          echo "Smoke check trang chủ thành công."
