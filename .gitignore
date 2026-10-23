@@ -26,7 +26,6 @@ desktop.ini
 node_modules/
 dist/
 build/
-.env
 .env.local
 .env.*.local
 npm-debug.log*
@@ -66,6 +65,12 @@ bin/
 obj/
 *.user
 *.suo
+
+# -----------------------------
+# Biến môi trường cục bộ (mật khẩu DB)
+# -----------------------------
+/.env
+!/.env.example
 
 # -----------------------------
 # Log & file tạm
