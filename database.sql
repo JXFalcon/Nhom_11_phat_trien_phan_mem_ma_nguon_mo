@@ -80,6 +80,7 @@ CREATE TABLE orders (
   status ENUM('cho_xac_nhan','da_xac_nhan','dang_giao','da_giao','da_huy') NOT NULL DEFAULT 'cho_xac_nhan',
   stock_restored TINYINT NOT NULL DEFAULT 0 COMMENT '1=đã hoàn kho khi hủy (chỉ 1 lần)',
   cancel_reason VARCHAR(255) DEFAULT NULL,
+  hold_expires_at DATETIME NULL COMMENT 'Hạn giữ hàng cho đơn chờ xác nhận; NULL với đơn đã qua bước chờ',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -87,6 +88,7 @@ CREATE TABLE orders (
   KEY idx_orders_user (user_id),
   KEY idx_orders_status (status),
   KEY idx_orders_date (order_date),
+  KEY idx_orders_hold (status, hold_expires_at),
   CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
@@ -475,12 +477,12 @@ INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (20, '
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (20, 'da_xac_nhan', 'dang_giao', 'Bàn giao vận chuyển (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (20, 'GD-5020', 20, 34080000, 'bank', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-09-22 00:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (20, 'VC-7020', 20, 'Giao Hàng Nhanh (GHN)', 'OF462496906', '2026-09-22 23:52:41', 'dang_van_chuyen');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (21, 'DH-1021', 22, 'Bùi Ngọc Yên', '0989584256', 'Quận 12, TP. Hồ Chí Minh', '2026-10-10 01:52:41', 'bank', 42660000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (21, 'DH-1021', 22, 'Bùi Ngọc Yên', '0989584256', 'Quận 12, TP. Hồ Chí Minh', '2026-10-10 01:52:41', 'bank', 42660000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (21, 15, 'SP-1015', 'Bàn phím Keychron K2 Pro', 'RGB / Brown Switch', 2, 2190000, 4380000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (21, 1, 'SP-1001', 'iPhone 15 Pro Max 256GB', '256GB / Titan Tự nhiên', 1, 34990000, 34990000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (21, 11, 'SP-1011', 'Loa JBL Charge 5', 'Xanh', 1, 3290000, 3290000);
-INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (21, 'GD-5021', 21, 42660000, 'bank', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-10-10 02:52:41');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (22, 'DH-1022', 8, 'Nguyễn Ngọc Linh', '0911219547', 'Quận 6, TP. Hồ Chí Minh', '2026-09-04 19:52:41', 'cod', 60460000, 'cho_xac_nhan');
+INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (21, 'GD-5021', 21, 42660000, 'bank', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (22, 'DH-1022', 8, 'Nguyễn Ngọc Linh', '0911219547', 'Quận 6, TP. Hồ Chí Minh', '2026-09-04 19:52:41', 'cod', 60460000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (22, 4, 'SP-1004', 'MacBook Air M3 13-inch', '8GB/256GB', 1, 28990000, 28990000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (22, 8, 'SP-1008', 'Samsung Galaxy Tab S9 FE', '128GB WiFi / Xám', 3, 10490000, 31470000);
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (22, 'GD-5022', 22, 60460000, 'cod', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
@@ -493,11 +495,11 @@ INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (23, '
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (23, 'dang_giao', 'da_giao', 'Khách đã nhận hàng (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (23, 'GD-5023', 23, 45150000, 'momo', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-08-29 19:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (23, 'VC-7023', 23, 'Ninja Van', 'OF614606290', '2026-08-30 18:52:41', 'da_giao');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (24, 'DH-1024', 20, 'Vũ Văn Mai', '0945808541', 'Quận 5, TP. Hồ Chí Minh', '2026-10-04 23:52:41', 'momo', 182930000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (24, 'DH-1024', 20, 'Vũ Văn Mai', '0945808541', 'Quận 5, TP. Hồ Chí Minh', '2026-10-04 23:52:41', 'momo', 182930000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (24, 6, 'SP-1006', 'ASUS ROG Strix G16', '16GB/1TB / Đen', 3, 39990000, 119970000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (24, 14, 'SP-1014', 'Chuột Logitech MX Master 3S', 'Pale Grey', 2, 2490000, 4980000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (24, 4, 'SP-1004', 'MacBook Air M3 13-inch', '8GB/256GB', 2, 28990000, 57980000);
-INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (24, 'GD-5024', 24, 182930000, 'momo', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-10-05 00:52:41');
+INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (24, 'GD-5024', 24, 182930000, 'momo', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
 INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (25, 'DH-1025', 5, 'Đỗ Anh Mai', '0935047646', 'Quận 8, TP. Hồ Chí Minh', '2026-08-27 12:52:41', 'bank', 25970000, 'da_giao');
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (25, 13, 'SP-1013', 'Garmin Fenix 7 Solar', '47mm / Đen', 1, 18500000, 18500000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (25, 14, 'SP-1014', 'Chuột Logitech MX Master 3S', 'Graphite', 3, 2490000, 7470000);
@@ -539,10 +541,10 @@ INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quant
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (30, 'cho_xac_nhan', 'da_xac_nhan', 'Xác nhận đơn (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (30, 'GD-5030', 30, 68990000, 'bank', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-09-04 15:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (30, 'VC-7030', 30, 'Viettel Post', 'OF324637447', '2026-09-05 14:52:41', 'cho_lay_hang');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (31, 'DH-1031', 13, 'Trần Gia Uyên', '0960053075', 'Quận 6, TP. Hồ Chí Minh', '2026-08-24 09:52:41', 'bank', 81760000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (31, 'DH-1031', 13, 'Trần Gia Uyên', '0960053075', 'Quận 6, TP. Hồ Chí Minh', '2026-08-24 09:52:41', 'bank', 81760000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (31, 6, 'SP-1006', 'ASUS ROG Strix G16', '16GB/1TB / Đen', 2, 39990000, 79980000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (31, 19, 'SP-1019', 'Áo khoác Unifree chống nước', 'L / Xám', 2, 890000, 1780000);
-INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (31, 'GD-5031', 31, 81760000, 'bank', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-08-24 10:52:41');
+INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (31, 'GD-5031', 31, 81760000, 'bank', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
 INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (32, 'DH-1032', 19, 'Vũ Văn Nam', '0930141011', 'Quận 6, TP. Hồ Chí Minh', '2026-08-24 00:52:41', 'cod', 7770000, 'da_giao');
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (32, 18, 'SP-1018', 'Lò vi sóng Samsung MS23F301', '23L', 3, 2590000, 7770000);
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (32, 'cho_xac_nhan', 'da_xac_nhan', 'Xác nhận đơn (seed)');
@@ -589,11 +591,11 @@ INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (38, '
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (38, 'dang_giao', 'da_giao', 'Khách đã nhận hàng (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (38, 'GD-5038', 38, 1780000, 'bank', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-09-09 11:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (38, 'VC-7038', 38, 'J&T Express', 'OF322208090', '2026-09-10 10:52:41', 'da_giao');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (39, 'DH-1039', 8, 'Nguyễn Ngọc Linh', '0911219547', 'Quận 1, TP. Hồ Chí Minh', '2026-08-27 01:52:41', 'bank', 144930000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (39, 'DH-1039', 8, 'Nguyễn Ngọc Linh', '0911219547', 'Quận 1, TP. Hồ Chí Minh', '2026-08-27 01:52:41', 'bank', 144930000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (39, 14, 'SP-1014', 'Chuột Logitech MX Master 3S', 'Graphite', 1, 2490000, 2490000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (39, 6, 'SP-1006', 'ASUS ROG Strix G16', '16GB/1TB / Đen', 3, 39990000, 119970000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (39, 10, 'SP-1010', 'Sony WH-1000XM5', 'Xanh dương', 3, 7490000, 22470000);
-INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (39, 'GD-5039', 39, 144930000, 'bank', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-08-27 02:52:41');
+INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (39, 'GD-5039', 39, 144930000, 'bank', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
 INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (40, 'DH-1040', 27, 'Đặng Hữu Sơn', '0945873291', 'Quận 2, TP. Hồ Chí Minh', '2026-10-17 00:52:41', 'bank', 7560000, 'da_giao');
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (40, 14, 'SP-1014', 'Chuột Logitech MX Master 3S', 'Pale Grey', 2, 2490000, 4980000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (40, 17, 'SP-1017', 'Nồi cơm điện Panasonic SR-DF183', '1.8L', 2, 1290000, 2580000);
@@ -617,9 +619,9 @@ INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (42, '
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (42, 'da_xac_nhan', 'dang_giao', 'Bàn giao vận chuyển (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (42, 'GD-5042', 42, 32570000, 'bank', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-10-09 13:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (42, 'VC-7042', 42, 'Viettel Post', 'OF419867190', '2026-10-10 12:52:41', 'that_bai');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (43, 'DH-1043', 18, 'Bùi Anh Phong', '0924656020', 'Quận 4, TP. Hồ Chí Minh', '2026-09-07 08:52:41', 'momo', 17970000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (43, 'DH-1043', 18, 'Bùi Anh Phong', '0924656020', 'Quận 4, TP. Hồ Chí Minh', '2026-09-07 08:52:41', 'momo', 17970000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (43, 9, 'SP-1009', 'AirPods Pro 2 (USB-C)', 'Tiêu chuẩn', 3, 5990000, 17970000);
-INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (43, 'GD-5043', 43, 17970000, 'momo', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-09-07 09:52:41');
+INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (43, 'GD-5043', 43, 17970000, 'momo', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
 INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (44, 'DH-1044', 27, 'Đặng Hữu Sơn', '0945873291', 'Quận 9, TP. Hồ Chí Minh', '2026-10-01 08:52:41', 'bank', 16070000, 'da_xac_nhan');
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (44, 8, 'SP-1008', 'Samsung Galaxy Tab S9 FE', '128GB WiFi / Xám', 1, 10490000, 10490000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (44, 20, 'SP-1020', 'Giày Nike Air Force 1 \'07', '40 / Trắng', 2, 2790000, 5580000);
@@ -808,11 +810,11 @@ INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (69, '
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (69, 'dang_giao', 'da_giao', 'Khách đã nhận hàng (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (69, 'GD-5069', 69, 12470000, 'bank', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-10-20 16:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (69, 'VC-7069', 69, 'Ninja Van', 'OF812394964', '2026-10-21 15:52:41', 'da_giao');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (70, 'DH-1070', 30, 'Trần Bảo Chi', '0920504175', 'Quận 9, TP. Hồ Chí Minh', '2026-08-25 10:52:41', 'bank', 122160000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (70, 'DH-1070', 30, 'Trần Bảo Chi', '0920504175', 'Quận 9, TP. Hồ Chí Minh', '2026-08-25 10:52:41', 'bank', 122160000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (70, 15, 'SP-1015', 'Bàn phím Keychron K2 Pro', 'RGB / Brown Switch', 1, 2190000, 2190000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (70, 6, 'SP-1006', 'ASUS ROG Strix G16', '32GB/1TB', 3, 39990000, 119970000);
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (70, 'GD-5070', 70, 122160000, 'bank', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (71, 'DH-1071', 26, 'Đặng Bảo Oanh', '0998867996', 'Quận 8, TP. Hồ Chí Minh', '2026-08-24 16:52:41', 'cod', 17060000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (71, 'DH-1071', 26, 'Đặng Bảo Oanh', '0998867996', 'Quận 8, TP. Hồ Chí Minh', '2026-08-24 16:52:41', 'cod', 17060000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (71, 8, 'SP-1008', 'Samsung Galaxy Tab S9 FE', '128GB WiFi / Xám', 1, 10490000, 10490000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (71, 15, 'SP-1015', 'Bàn phím Keychron K2 Pro', 'RGB / Brown Switch', 3, 2190000, 6570000);
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (71, 'GD-5071', 71, 17060000, 'cod', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
@@ -893,10 +895,10 @@ INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (82, '
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (82, 'da_xac_nhan', 'dang_giao', 'Bàn giao vận chuyển (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (82, 'GD-5082', 82, 86970000, 'momo', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-09-11 23:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (82, 'VC-7082', 82, 'Ninja Van', 'OF568234544', '2026-09-12 22:52:41', 'dang_van_chuyen');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (83, 'DH-1083', 8, 'Nguyễn Ngọc Linh', '0911219547', 'Quận 11, TP. Hồ Chí Minh', '2026-10-19 13:52:41', 'momo', 47490000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (83, 'DH-1083', 8, 'Nguyễn Ngọc Linh', '0911219547', 'Quận 11, TP. Hồ Chí Minh', '2026-10-19 13:52:41', 'momo', 47490000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (83, 5, 'SP-1005', 'Dell XPS 13 Plus', '16GB/512GB / Bạch kim', 1, 31500000, 31500000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (83, 7, 'SP-1007', 'iPad Air M2 11-inch', '256GB WiFi', 1, 15990000, 15990000);
-INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (83, 'GD-5083', 83, 47490000, 'momo', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-10-19 14:52:41');
+INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (83, 'GD-5083', 83, 47490000, 'momo', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
 INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (84, 'DH-1084', 26, 'Đặng Bảo Oanh', '0998867996', 'Quận 3, TP. Hồ Chí Minh', '2026-09-08 13:52:41', 'bank', 112940000, 'da_xac_nhan');
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (84, 16, 'SP-1016', 'Màn hình LG UltraGear 27GQ750', '27\" 4K 144Hz', 2, 7990000, 15980000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (84, 2, 'SP-1002', 'Samsung Galaxy S24 Ultra', '256GB / Tím', 3, 27990000, 83970000);
@@ -928,7 +930,7 @@ INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (87, '
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (87, 'da_xac_nhan', 'dang_giao', 'Bàn giao vận chuyển (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (87, 'GD-5087', 87, 46950000, 'cod', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-09-18 02:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (87, 'VC-7087', 87, 'Viettel Post', 'OF584970000', '2026-09-19 01:52:41', 'dang_van_chuyen');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (88, 'DH-1088', 15, 'Đặng Quốc Yên', '0929414106', 'Quận 2, TP. Hồ Chí Minh', '2026-09-04 19:52:41', 'momo', 69980000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (88, 'DH-1088', 15, 'Đặng Quốc Yên', '0929414106', 'Quận 2, TP. Hồ Chí Minh', '2026-09-04 19:52:41', 'momo', 69980000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (88, 1, 'SP-1001', 'iPhone 15 Pro Max 256GB', '1TB / Đen', 2, 34990000, 69980000);
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (88, 'GD-5088', 88, 69980000, 'momo', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
 INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (89, 'DH-1089', 5, 'Đỗ Anh Mai', '0935047646', 'Quận 4, TP. Hồ Chí Minh', '2026-10-13 01:52:41', 'bank', 38450000, 'da_giao');
@@ -960,11 +962,11 @@ INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (92, '
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (92, 'dang_giao', 'da_giao', 'Khách đã nhận hàng (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (92, 'GD-5092', 92, 62250000, 'cod', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-08-24 09:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (92, 'VC-7092', 92, 'Viettel Post', 'OF870497012', '2026-08-25 08:52:41', 'da_giao');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (93, 'DH-1093', 3, 'Lê Minh Tuấn', '0901000003', 'Quận 2, TP. Hồ Chí Minh', '2026-10-18 03:52:41', 'bank', 145440000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (93, 'DH-1093', 3, 'Lê Minh Tuấn', '0901000003', 'Quận 2, TP. Hồ Chí Minh', '2026-10-18 03:52:41', 'bank', 145440000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (93, 2, 'SP-1002', 'Samsung Galaxy S24 Ultra', '256GB / Tím', 2, 27990000, 55980000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (93, 14, 'SP-1014', 'Chuột Logitech MX Master 3S', 'Pale Grey', 1, 2490000, 2490000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (93, 4, 'SP-1004', 'MacBook Air M3 13-inch', '16GB/512GB', 3, 28990000, 86970000);
-INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (93, 'GD-5093', 93, 145440000, 'bank', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-10-18 04:52:41');
+INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (93, 'GD-5093', 93, 145440000, 'bank', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);
 INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (94, 'DH-1094', 25, 'Phạm Hữu Quân', '0943023371', 'Quận 1, TP. Hồ Chí Minh', '2026-09-29 20:52:41', 'momo', 6470000, 'da_giao');
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (94, 17, 'SP-1017', 'Nồi cơm điện Panasonic SR-DF183', '1.8L', 1, 1290000, 1290000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (94, 18, 'SP-1018', 'Lò vi sóng Samsung MS23F301', '23L', 2, 2590000, 5180000);
@@ -973,7 +975,7 @@ INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (94, '
 INSERT INTO order_history (order_id, from_status, to_status, note) VALUES (94, 'dang_giao', 'da_giao', 'Khách đã nhận hàng (seed)');
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (94, 'GD-5094', 94, 6470000, 'momo', 'thanh_cong', 'Thanh toán mô phỏng (seed)', '2026-09-29 21:52:41');
 INSERT INTO shipments (id, shipment_code, order_id, carrier, tracking_code, ship_date, status) VALUES (94, 'VC-7094', 94, 'Giao Hàng Nhanh (GHN)', 'OF718892101', '2026-09-30 20:52:41', 'da_giao');
-INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (95, 'DH-1095', 8, 'Nguyễn Ngọc Linh', '0911219547', 'Quận 5, TP. Hồ Chí Minh', '2026-08-22 11:52:41', 'momo', 107550000, 'cho_xac_nhan');
+INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (95, 'DH-1095', 8, 'Nguyễn Ngọc Linh', '0911219547', 'Quận 5, TP. Hồ Chí Minh', '2026-08-22 11:52:41', 'momo', 107550000, 'cho_xac_nhan', DATE_ADD(NOW(), INTERVAL 15 MINUTE));
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (95, 17, 'SP-1017', 'Nồi cơm điện Panasonic SR-DF183', '1.8L', 2, 1290000, 2580000);
 INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total) VALUES (95, 1, 'SP-1001', 'iPhone 15 Pro Max 256GB', '512GB / Xanh', 3, 34990000, 104970000);
 INSERT INTO payments (id, payment_code, order_id, amount, method, status, note, processed_at) VALUES (95, 'GD-5095', 95, 107550000, 'momo', 'cho_xu_ly', 'Thanh toán mô phỏng (seed)', NULL);

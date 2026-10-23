@@ -8,12 +8,19 @@
  */
 declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/orders_sweep.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $pdo = db();
 
 if ($method === 'GET') {
     $u = require_auth();
+    // Tự hủy đơn quá hạn giữ hàng trước khi trả danh sách; lỗi quét không được phá vỡ request.
+    try {
+        orders_cancel_expired_holds($pdo);
+    } catch (Throwable $e) {
+        error_log('Không quét được đơn quá hạn giữ hàng: ' . $e->getMessage());
+    }
     $q = trim((string)($_GET['q'] ?? ''));
     $status = (string)($_GET['status'] ?? '');
     $from = date_or_null($_GET['from'] ?? null);
@@ -138,11 +145,17 @@ if ($method === 'POST') {
 
         $code = next_code($pdo, 'orders', 'order_code', 'DH-');
         $userId = $u['role'] === 'customer' ? (int)$u['id'] : null;
+        // Đơn mới luôn ở cho_xac_nhan nên được giữ hàng có thời hạn.
+        // Số phút lấy từ OF_HOLD_MINUTES, mặc định 15 và chỉ chấp nhận khoảng 1..1440.
+        $holdMinutes = (int)getenv('OF_HOLD_MINUTES');
+        if ($holdMinutes < 1 || $holdMinutes > 1440) {
+            $holdMinutes = 15;
+        }
         $ins = $pdo->prepare(
-            'INSERT INTO orders (order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status)
-             VALUES (?,?,?,?,?,NOW(),?,?,"cho_xac_nhan")'
+            'INSERT INTO orders (order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at)
+             VALUES (?,?,?,?,?,NOW(),?,?,"cho_xac_nhan", DATE_ADD(NOW(), INTERVAL ? MINUTE))'
         );
-        $ins->execute([$code, $userId, $customerName, $phone ?: null, $address ?: null, $methodPay, $total]);
+        $ins->execute([$code, $userId, $customerName, $phone ?: null, $address ?: null, $methodPay, $total, $holdMinutes]);
         $orderId = (int)$pdo->lastInsertId();
 
         $insItem = $pdo->prepare(

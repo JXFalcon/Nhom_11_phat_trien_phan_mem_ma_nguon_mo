@@ -34,7 +34,10 @@ if ($id <= 0 || !isset($allowed[$to])) {
 }
 
 $pdo = db();
-$st = $pdo->prepare('SELECT * FROM orders WHERE id = ? FOR UPDATE');
+$st = $pdo->prepare(
+    'SELECT *, (hold_expires_at IS NOT NULL AND hold_expires_at < NOW()) AS hold_expired
+     FROM orders WHERE id = ? FOR UPDATE'
+);
 // cần transaction để đọc-ghi atomically
 $pdo->beginTransaction();
 try {
@@ -45,6 +48,11 @@ try {
         json_fail('Không tìm thấy đơn hàng.', 404);
     }
     $from = $order['status'];
+    // Đơn đã quá hạn giữ hàng thì chỉ còn được hủy (so hạn theo giờ DB để tránh lệch timezone).
+    if ($from === 'cho_xac_nhan' && (int)($order['hold_expired'] ?? 0) === 1 && $to !== 'da_huy') {
+        $pdo->rollBack();
+        json_fail('Đơn đã quá hạn giữ hàng — chỉ còn có thể hủy.', 409);
+    }
     if (!in_array($to, $allowed[$from] ?? [], true)) {
         $pdo->rollBack();
         json_fail(
@@ -59,7 +67,7 @@ try {
             $pdo->rollBack();
             json_fail('Đơn này đã được hoàn kho trước đó, không hoàn lại lần nữa.', 409);
         }
-        $pdo->prepare('UPDATE orders SET status = ?, cancel_reason = ?, stock_restored = 1 WHERE id = ?')
+        $pdo->prepare('UPDATE orders SET status = ?, cancel_reason = ?, stock_restored = 1, hold_expires_at = NULL WHERE id = ?')
             ->execute(['da_huy', $note !== '' ? $note : 'Hủy đơn', $id]);
         $items = $pdo->prepare('SELECT product_id, quantity FROM order_items WHERE order_id = ?');
         $items->execute([$id]);
@@ -81,7 +89,7 @@ try {
              WHERE order_id = ? AND status IN ('cho_lay_hang', 'dang_van_chuyen')"
         )->execute([$id]);
     } else {
-        $pdo->prepare('UPDATE orders SET status = ? WHERE id = ?')->execute([$to, $id]);
+        $pdo->prepare('UPDATE orders SET status = ?, hold_expires_at = NULL WHERE id = ?')->execute([$to, $id]);
     }
 
     $pdo->prepare(

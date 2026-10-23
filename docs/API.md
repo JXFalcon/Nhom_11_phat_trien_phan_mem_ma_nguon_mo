@@ -90,12 +90,12 @@ Lưu ý: với các request thay đổi dữ liệu (`POST`, `PUT`, `PATCH`, `DE
 | `GET` | `/api/categories/item.php?id=N` | Có | admin, staff, customer | Chi tiết danh mục | Query: `id` |
 | `PUT` | `/api/categories/item.php?id=N` | Có | admin | Cập nhật danh mục | `name`, `description`, `emoji` |
 | `DELETE` | `/api/categories/item.php?id=N` | Có | admin | Xóa danh mục; chặn nếu còn sản phẩm | Query: `id` |
-| `GET` | `/api/orders/index.php` | Có | admin, staff (tất cả); customer (đơn của mình) | Danh sách đơn hàng | Query: `q`, `status`, `from`, `to`, `page`, `per_page` |
-| `POST` | `/api/orders/index.php` | Có | admin, staff, customer | Tạo đơn; server tự tính giá, trừ tồn kho và tạo giao dịch chờ | `customer_name`, `phone`, `address`, `payment_method`, `items[]` (`product_id`, `quantity`, `variant`) |
-| `GET` | `/api/orders/item.php?id=N` | Có | admin, staff; customer chỉ đơn của mình | Chi tiết đơn kèm `items`, `payments`, `shipments`, `returns`, `history` | Query: `id` |
+| `GET` | `/api/orders/index.php` | Có | admin, staff (tất cả); customer (đơn của mình) | Danh sách đơn hàng; mỗi đơn trả kèm `hold_expires_at` (đơn `cho_xac_nhan` quá hạn sẽ được tự hủy khi gọi) | Query: `q`, `status`, `from`, `to`, `page`, `per_page` |
+| `POST` | `/api/orders/index.php` | Có | admin, staff, customer | Tạo đơn; server tự tính giá, trừ tồn kho và tạo giao dịch chờ; `hold_expires_at = now + OF_HOLD_MINUTES` phút (mặc định 15) | `customer_name`, `phone`, `address`, `payment_method`, `items[]` (`product_id`, `quantity`, `variant`) |
+| `GET` | `/api/orders/item.php?id=N` | Có | admin, staff; customer chỉ đơn của mình | Chi tiết đơn kèm `hold_expires_at`, `items`, `payments`, `shipments`, `returns`, `history` | Query: `id` |
 | `PATCH` (hoặc `POST`) | `/api/orders/status.php` | Có | admin, staff | Chuyển trạng thái đơn theo vòng đời; hủy đơn hoàn kho đúng 1 lần và hủy vận đơn đang xử lý/giao | `id`, `to_status`, `note` |
 | `GET` | `/api/payments/index.php` | Có | admin, staff (tất cả); customer (đơn của mình) | Danh sách giao dịch thanh toán | Query: `q`, `status`, `method`, `page`, `per_page` |
-| `PATCH` (hoặc `POST`) | `/api/payments/simulate.php` | Có | admin, staff | Mô phỏng kết quả thanh toán, có chống xử lý trùng | `id`, `result` (`thanh_cong`/`that_bai`), `idempotency_key` |
+| `PATCH` (hoặc `POST`) | `/api/payments/simulate.php` | Có | admin, staff | Mô phỏng kết quả thanh toán, có chống xử lý trùng; thanh toán đến muộn trả `409` kèm `{late:true, order_status}` | `id`, `result` (`thanh_cong`/`that_bai`), `idempotency_key` |
 | `GET` | `/api/returns/index.php` | Có | admin, staff (tất cả); customer (của mình) | Danh sách yêu cầu đổi trả | Query: `q`, `status`, `page`, `per_page` |
 | `POST` | `/api/returns/index.php` | Có | admin, staff, customer | Tạo yêu cầu đổi trả cho đơn đã giao | `order_id`, `order_item_id`, `quantity`, `reason` |
 | `PATCH` (hoặc `POST`) | `/api/returns/status.php` | Có | admin, staff | Xử lý đổi trả, tính tiền hoàn và nhập lại kho nếu cần | `id`, `to_status`, `quantity_accepted`, `note`, `restock` |
@@ -120,10 +120,13 @@ cho_xac_nhan → da_xac_nhan → dang_giao → da_giao
 - `da_giao`: đã giao (trạng thái cuối)
 - `da_huy`: đã hủy (trạng thái cuối), tồn kho được hoàn đúng một lần; vận đơn `cho_lay_hang`/`dang_van_chuyen` chuyển sang `that_bai`
 
+Đơn `cho_xac_nhan` có `hold_expires_at` (hạn giữ hàng, mặc định thêm `OF_HOLD_MINUTES` phút, không đặt thì 15). Khi GET danh sách/chi tiết, server tự quét và hủy các đơn đã quá hạn (`includes/orders_sweep.php`, hoàn kho đúng một lần). Đơn quá hạn chỉ còn có thể hủy; `status.php` trả `409` nếu cố xác nhận.
+
 ### Thanh toán (`payments.status`)
 
 `cho_xu_ly`, `thanh_cong`, `that_bai`.
 Khi mô phỏng `thanh_cong` và đơn đang `cho_xac_nhan`, server tự chuyển đơn sang `da_xac_nhan`, tạo vận đơn nếu chưa có và trả `order_status` là `da_xac_nhan`.
+Nếu thanh toán đến muộn — đơn đã `da_huy`/`dang_giao`/`da_giao`, hoặc `cho_xac_nhan` nhưng đã quá hạn giữ hàng — server trả `409` với `data` gồm `{late: true, order_status}` và ghi giao dịch `that_bai` (không hồi sinh đơn).
 
 ### Đổi trả (`return_requests.status`)
 

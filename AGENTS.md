@@ -37,6 +37,8 @@ Hướng dẫn ngắn cho AI coding agent làm việc trong OrderFlow — POS PH
 - `shipments.status` ENUM chỉ có `cho_lay_hang,dang_van_chuyen,da_giao,that_bai` (KHÔNG có `huy_bo`; KHÔNG có cột `note`).
 - Hủy đơn phải nằm trong 1 transaction `FOR UPDATE`: hoàn kho đúng 1 lần (cột `orders.stock_restored`) + payment `cho_xu_ly→that_bai` + shipment đang chạy → `that_bai`.
 - `payments/simulate.php` dùng `idempotency_key` chống xử lý trùng; thành công khi đơn `cho_xac_nhan` sẽ tự chuyển `da_xac_nhan` + tạo vận đơn nếu chưa có.
+- `orders.hold_expires_at` là hạn giữ hàng của đơn `cho_xac_nhan` (tạo đơn dùng `OF_HOLD_MINUTES`, mặc định 15, đọc qua `getenv`). `includes/orders_sweep.php` quét khi GET list/item (tối đa 200 đơn/lần, idempotent nhờ `stock_restored`); `api/orders/status.php` chặn xác nhận đơn quá hạn (chỉ cho hủy).
+- `payments/simulate.php` khóa đơn TRƯỚC rồi mới khóa payment (thứ tự `orders→payments` khớp `orders_sweep.php`); thanh toán đến muộn (đơn đã hủy/đang giao/đã giao hoặc quá hạn giữ hàng) trả `409` kèm `{late:true, order_status}`.
 - Xóa sản phẩm đã phát sinh dữ liệu sẽ chuyển `hidden`; xóa danh mục bị chặn nếu còn sản phẩm.
 - Đổi trả chỉ nhận đơn `da_giao`; duyệt với `restock` sẽ nhập lại kho.
 - `database/generate_seed.php` GHI ĐÈ `database.sql`; chỉ chạy khi có chủ ý, không cần DB.

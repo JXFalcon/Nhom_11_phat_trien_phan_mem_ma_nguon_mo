@@ -143,6 +143,7 @@ CREATE TABLE orders (
   status ENUM('cho_xac_nhan','da_xac_nhan','dang_giao','da_giao','da_huy') NOT NULL DEFAULT 'cho_xac_nhan',
   stock_restored TINYINT NOT NULL DEFAULT 0 COMMENT '1=đã hoàn kho khi hủy (chỉ 1 lần)',
   cancel_reason VARCHAR(255) DEFAULT NULL,
+  hold_expires_at DATETIME NULL COMMENT 'Hạn giữ hàng cho đơn chờ xác nhận; NULL với đơn đã qua bước chờ',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -150,6 +151,7 @@ CREATE TABLE orders (
   KEY idx_orders_user (user_id),
   KEY idx_orders_status (status),
   KEY idx_orders_date (order_date),
+  KEY idx_orders_hold (status, hold_expires_at),
   CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
@@ -403,9 +405,11 @@ for ($i = 0; $i < 100; $i++) {
         $items[] = [$pi, $pr[0], $pr[1], $variant, $qty, $price, $qty * $price];
         $total += $qty * $price;
     }
+    // Đơn chờ xác nhận trong seed được giữ hàng 15 phút tính từ lúc import; đơn đã qua bước chờ để NULL.
+    $holdExpires = $status === 'cho_xac_nhan' ? 'DATE_ADD(NOW(), INTERVAL 15 MINUTE)' : 'NULL';
     $out[] = sprintf(
-        "INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status) VALUES (%d, %s, %d, %s, %s, %s, %s, '%s', %d, '%s');",
-        $oid, sqlStr($code), $custId, sqlStr($custName), sqlStr($custPhone), sqlStr($address), sqlDt($orderDate), $method, $total, $status
+        "INSERT INTO orders (id, order_code, user_id, customer_name, phone, address, order_date, payment_method, total_amount, status, hold_expires_at) VALUES (%d, %s, %d, %s, %s, %s, %s, '%s', %d, '%s', %s);",
+        $oid, sqlStr($code), $custId, sqlStr($custName), sqlStr($custPhone), sqlStr($address), sqlDt($orderDate), $method, $total, $status, $holdExpires
     );
     foreach ($items as $it) {
         [$pi,$sku,$nm,$var,$qty,$price,$lt] = $it;
@@ -429,7 +433,8 @@ for ($i = 0; $i < 100; $i++) {
     }
 
     // thanh toán
-    if ($status === 'cho_xac_nhan') $payStatus = ($method === 'cod') ? 'cho_xu_ly' : ($rng() < 0.7 ? 'thanh_cong' : 'cho_xu_ly');
+    // Đơn còn chờ xác nhận thì chưa thể thanh toán thành công (còn đang giữ hàng).
+    if ($status === 'cho_xac_nhan') $payStatus = 'cho_xu_ly';
     elseif ($status === 'da_huy') $payStatus = ($method === 'cod') ? 'cho_xu_ly' : 'that_bai';
     else $payStatus = 'thanh_cong';
     $payProcessed = in_array($payStatus, ['thanh_cong','that_bai'], true) ? date('Y-m-d H:i:s', $ts + 3600) : 'NULL';

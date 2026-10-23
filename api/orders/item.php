@@ -6,6 +6,7 @@
  */
 declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/orders_sweep.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method !== 'GET') {
@@ -17,6 +18,13 @@ if ($id <= 0) {
     json_fail('Thiếu id đơn hàng.', 422);
 }
 $pdo = db();
+
+// Tự hủy đơn quá hạn giữ hàng trước khi đọc chi tiết; lỗi quét không chặn request.
+try {
+    orders_cancel_expired_holds($pdo);
+} catch (Throwable $e) {
+    error_log('Không quét được đơn quá hạn giữ hàng: ' . $e->getMessage());
+}
 
 $st = $pdo->prepare('SELECT * FROM orders WHERE id = ?');
 $st->execute([$id]);

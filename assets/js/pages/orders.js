@@ -17,6 +17,21 @@
   const role = () => (OF.session.getUser() || {}).role || "customer";
   const canManage = () => role() === "admin" || role() === "staff";
 
+  function holdExpired(iso) {
+    if (!iso) return false;
+    const d = new Date(String(iso).replace(" ", "T"));
+    return !isNaN(d) && d.getTime() < Date.now();
+  }
+
+  function holdBadgeHTML(o) {
+    if (o.status !== "cho_xac_nhan" || !o.hold_expires_at) return "";
+    return '<span class="cell-sub">' +
+      (holdExpired(o.hold_expires_at)
+        ? "⚠️ Quá hạn giữ hàng"
+        : "Giữ hàng đến " + OF.fmt.dateTime(o.hold_expires_at)) +
+      "</span>";
+  }
+
   /* Vòng đời đơn (hiển thị lựa chọn; server là nguồn quyết định) */
   const NEXT_STATUS = {
     cho_xac_nhan: ["da_xac_nhan", "da_huy"],
@@ -59,7 +74,7 @@
         "<td>" + OF.fmt.date(o.order_date) + "</td>" +
         '<td class="text-right"><strong>' + OF.fmt.money(o.total_amount) + "</strong></td>" +
         "<td>" + OF.escapeHtml(OF.PAYMENT_METHODS[o.payment_method] || o.payment_method).split(" ")[0] + "</td>" +
-        "<td>" + OF.badgeHTML(OF.ORDER_STATUS, o.status) + "</td>" +
+        "<td>" + OF.badgeHTML(OF.ORDER_STATUS, o.status) + holdBadgeHTML(o) + "</td>" +
         '<td><div class="cell-actions">' +
           '<button class="btn btn-sm btn-icon" data-view="' + o.id + '" title="Xem chi tiết">' + OF.icon("eye", "icon-sm") + "</button>" +
           (canManage() && NEXT_STATUS[o.status] && NEXT_STATUS[o.status].length
@@ -125,6 +140,18 @@
       '<td class="text-right">' + OF.fmt.money(r.refund_total) + "</td></tr>"
     ).join("");
 
+    const holdAlert = o.status === "cho_xac_nhan" && o.hold_expires_at
+      ? '<div class="alert-banner alert-warning">' +
+          "<div>" +
+            (holdExpired(o.hold_expires_at)
+              ? "<strong>⚠️ Quá hạn giữ hàng — sẽ tự hủy khi tải lại danh sách</strong>" +
+                "<p>Đơn đã quá hạn giữ hàng và sẽ được tự hủy, hoàn kho khi tải lại danh sách.</p>"
+              : "<strong>⏳ Đơn đang giữ hàng, cần thanh toán trước " + OF.fmt.dateTime(o.hold_expires_at) + "</strong>" +
+                "<p>Quá hạn sẽ tự hủy và hoàn kho.</p>") +
+          "</div>" +
+        "</div>"
+      : "";
+
     OF.ui.openModal({
       title: "Chi tiết đơn hàng " + o.order_code,
       size: "lg",
@@ -140,6 +167,7 @@
             (ship ? OF.escapeHtml(ship.carrier) + " · " + OF.badgeHTML(OF.SHIPMENT_STATUS, ship.status) : "Chưa có") + "</span></div>" +
           '<div class="detail-item"><label>Mã vận đơn</label><span>' + (ship ? OF.escapeHtml(ship.tracking_code || ship.shipment_code) : "—") + "</span></div>" +
         "</div>" +
+        holdAlert +
         '<h3 style="margin-bottom:8px">Sản phẩm trong đơn</h3>' +
         '<table class="order-items-table"><thead><tr><th>Sản phẩm</th><th class="text-right">SL</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th></tr></thead>' +
         "<tbody>" + itemsHTML + "</tbody></table>" +
