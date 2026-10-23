@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Danh mục – OrderFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-topbar" class="topbar"></header>
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h1>Quản lý danh mục</h1>
+            <p class="page-sub">Tổ chức sản phẩm theo nhóm hàng (đồng bộ MySQL).</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" id="btnAddCategory">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              Thêm danh mục
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toolbar">
+            <div class="input-icon-wrap toolbar-search">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+              <input type="text" id="searchInput" class="form-control" placeholder="Tìm theo tên danh mục…" />
+            </div>
+            <div class="toolbar-spacer"></div>
+            <span class="muted" id="resultCount"></span>
+          </div>
+          <div class="card-body flush">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Danh mục</th>
+                    <th>Mã</th>
+                    <th>Mô tả</th>
+                    <th class="text-right">Số sản phẩm</th>
+                    <th class="text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="categoryTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="assets/js/data.js"></script>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/pages/categories.js"></script>
+</body>
+</html>

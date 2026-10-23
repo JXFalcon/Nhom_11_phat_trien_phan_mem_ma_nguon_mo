@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard – OrderFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-topbar" class="topbar"></header>
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h1>Tổng quan</h1>
+            <p class="page-sub">Chào mừng bạn trở lại! Dưới đây là tình hình bán hàng mới nhất (từ MySQL).</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn" href="orders.html">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8A.8.8 0 0 1 9.8 2h4.4a.8.8 0 0 1 .8.8V4"/><path d="M9 10h6M9 14h4"/></svg>
+              Xem đơn hàng
+            </a>
+            <a class="btn btn-primary" href="reports.html">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20v-6.5M10 20V8M15.5 20v-9M21 20V4.5"/><path d="M2.5 20h19"/></svg>
+              Xem báo cáo
+            </a>
+          </div>
+        </div>
+
+        <!-- Thẻ thống kê -->
+        <section id="statGrid" class="stat-grid"></section>
+
+        <!-- Biểu đồ + thống kê trạng thái -->
+        <section class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20v-6.5M10 20V8M15.5 20v-9M21 20V4.5"/><path d="M2.5 20h19"/></svg>
+                  Doanh thu 14 ngày gần đây
+                </div>
+                <p class="card-sub">Loại trừ đơn đã hủy · đơn vị: triệu đồng</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="revenueChart"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/></svg>
+                  Trạng thái đơn hàng
+                </div>
+                <p class="card-sub">Phân bố trên toàn bộ đơn hàng</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="statusDonut"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Đơn gần đây + xử lý nhanh -->
+        <section class="grid-2">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+                Đơn hàng gần đây
+              </div>
+              <a class="btn btn-sm" href="orders.html">Xem tất cả</a>
+            </div>
+            <div class="card-body flush">
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Mã đơn</th>
+                      <th>Khách hàng</th>
+                      <th>Ngày đặt</th>
+                      <th>Tổng tiền</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recentOrdersBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>
+                Công việc cần xử lý
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="pendingList" class="quick-list"></div>
+              <p class="form-hint mt-16">Số liệu lấy từ API /api/reports/summary trên cơ sở dữ liệu MySQL.</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="assets/js/data.js"></script>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/pages/dashboard.js"></script>
+</body>
+</html>

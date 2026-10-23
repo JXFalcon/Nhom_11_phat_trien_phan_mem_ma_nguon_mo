@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Không có quyền truy cập – OrderFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <!-- Cột hình ảnh / thương hiệu -->
+    <aside class="auth-visual">
+      <div class="auth-brand">
+        <div class="brand-logo">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/><path d="m8.5 16 2 2 4-4.5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">OrderFlow</span>
+          <span class="brand-sub">Quản lý đơn hàng &amp; đổi trả</span>
+        </div>
+      </div>
+
+      <div class="auth-visual-body">
+        <h2>Phân quyền<br />&amp; kiểm soát truy cập</h2>
+        <p>Mỗi vai trò chỉ mở được những phần mình phụ trách. Mọi thao tác đều được kiểm tra quyền ở phía máy chủ, không chỉ ẩn nút trên giao diện.</p>
+        <div class="auth-feature-list">
+          <div class="auth-feature">
+            <span class="auth-feature-icon">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3 20 6v6c0 5-3.5 8-8 9.5C7.5 20 4 17 4 12V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/>
+              </svg>
+            </span>
+            Quản trị viên: toàn quyền sản phẩm, danh mục, báo cáo
+          </div>
+          <div class="auth-feature">
+            <span class="auth-feature-icon">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8A.8.8 0 0 1 9.8 2h4.4a.8.8 0 0 1 .8.8V4"/><path d="M9 10h6M9 14h4"/>
+              </svg>
+            </span>
+            Nhân viên: xử lý đơn, đổi trả, thanh toán, giao hàng
+          </div>
+          <div class="auth-feature">
+            <span class="auth-feature-icon">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5c1-4 4-6 7.5-6s6.5 2 7.5 6"/>
+              </svg>
+            </span>
+            Khách hàng: chỉ đơn hàng &amp; đổi trả của chính mình
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-visual-footer">Bài tập lớn – Đề tài 19 · Backend PHP + MySQL</div>
+    </aside>
+
+    <!-- Cột nội dung lỗi -->
+    <main class="auth-form-side">
+      <div class="auth-card">
+        <div class="empty-state">
+          <div class="empty-state-icon" id="forbiddenIcon">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3 20 6v6c0 5-3.5 8-8 9.5C7.5 20 4 17 4 12V6z"/><path d="m9 9 6 6M15 9l-6 6"/>
+            </svg>
+          </div>
+          <h3>Không có quyền truy cập</h3>
+          <p id="forbiddenMsg">
+            Tài khoản của bạn không được phép mở trang này.
+          </p>
+        </div>
+
+        <div class="alert-banner alert-warning" id="forbiddenDetail">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.4v.2"/>
+          </svg>
+          <div>
+            <strong>Trang bị chặn</strong>
+            <p id="blockedPageName">—</p>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-item"><label>Tài khoản</label><span id="fUserName">—</span></div>
+          <div class="detail-item"><label>Vai trò</label><span id="fUserRole">—</span></div>
+          <div class="detail-item"><label>Email</label><span id="fUserEmail">—</span></div>
+        </div>
+
+        <div class="auth-form" style="margin-top: 16px">
+          <a class="btn btn-primary auth-submit" id="goHomeBtn" href="orders.html">Đi tới trang của tôi</a>
+          <a class="btn auth-submit" id="goAdminBtn" href="index.html" style="display:none">Mở Dashboard quản trị</a>
+          <button type="button" class="btn btn-ghost auth-submit" id="logoutBtn403">Đăng xuất</button>
+        </div>
+
+        <p class="auth-alt">Nếu bạn cho rằng đây là lỗi, hãy liên hệ quản trị viên để được cấp quyền.</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/pages/forbidden.js"></script>
+</body>
+</html>

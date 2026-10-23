@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Đăng ký – OrderFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="auth-page">
+    <!-- Cột hình ảnh / thương hiệu -->
+    <aside class="auth-visual">
+      <div class="auth-brand">
+        <div class="brand-logo">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/><path d="m8.5 16 2 2 4-4.5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">OrderFlow</span>
+          <span class="brand-sub">Quản lý đơn hàng &amp; đổi trả</span>
+        </div>
+      </div>
+
+      <div class="auth-visual-body">
+        <h2>Tạo tài khoản<br />bắt đầu bán hàng</h2>
+        <p>Tạo tài khoản khách hàng mới – thông tin được lưu vào cơ sở dữ liệu MySQL.</p>
+        <div class="auth-feature-list">
+          <div class="auth-feature">
+            <span class="auth-feature-icon">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c.6-3.4 3.2-5.2 6.2-5.2s5.6 1.8 6.2 5.2"/><circle cx="17" cy="9" r="2.4"/>
+              </svg>
+            </span>
+            30 tài khoản mẫu với vai trò khác nhau
+          </div>
+          <div class="auth-feature">
+            <span class="auth-feature-icon">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>
+              </svg>
+            </span>
+            100 đơn hàng, 20 sản phẩm &amp; dữ liệu đổi trả mẫu
+          </div>
+          <div class="auth-feature">
+            <span class="auth-feature-icon">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3 20 6v6c0 5-3.5 8-8 9.5C7.5 20 4 17 4 12V6z"/><path d="m8.8 12 2.2 2.2 4.2-4.4"/>
+              </svg>
+            </span>
+            Giai đoạn sau: tích hợp backend PHP/MySQL
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-visual-footer">Bài tập lớn – Đề tài 19 · Backend PHP + MySQL</div>
+    </aside>
+
+    <!-- Cột form -->
+    <main class="auth-form-side">
+      <div class="auth-card">
+        <h1>Tạo tài khoản</h1>
+        <p class="auth-card-lead">Điền thông tin bên dưới để đăng ký tài khoản (dữ liệu gửi lên máy chủ MySQL).</p>
+
+        <div class="auth-alert" id="registerAlert" role="alert"></div>
+
+        <form id="registerForm" class="auth-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="regFullName">Họ và tên <span class="req">*</span></label>
+            <input type="text" id="regFullName" class="form-control" placeholder="Nguyễn Văn A" autocomplete="name" />
+            <div class="form-error" data-error-for="regFullName"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="regEmail">Email <span class="req">*</span></label>
+              <input type="email" id="regEmail" class="form-control" placeholder="ten@domain.com" autocomplete="email" />
+              <div class="form-error" data-error-for="regEmail"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="regPhone">Số điện thoại <span class="req">*</span></label>
+              <input type="tel" id="regPhone" class="form-control" placeholder="0901234567" autocomplete="tel" />
+              <div class="form-error" data-error-for="regPhone"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Mật khẩu <span class="req">*</span></label>
+            <div class="input-icon-wrap">
+              <input type="password" id="regPassword" class="form-control has-icon-btn" placeholder="Tối thiểu 6 ký tự" autocomplete="new-password" />
+              <button type="button" class="input-icon-btn" id="toggleRegPw" aria-label="Hiện mật khẩu">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <div class="form-error" data-error-for="regPassword"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="regConfirm">Xác nhận mật khẩu <span class="req">*</span></label>
+            <div class="input-icon-wrap">
+              <input type="password" id="regConfirm" class="form-control has-icon-btn" placeholder="Nhập lại mật khẩu" autocomplete="new-password" />
+              <button type="button" class="input-icon-btn" id="toggleRegPw2" aria-label="Hiện mật khẩu">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </div>
+            <div class="form-error" data-error-for="regConfirm"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary auth-submit">Đăng ký tài khoản</button>
+        </form>
+
+        <p class="auth-alt">Đã có tài khoản? <a href="login.html">Đăng nhập</a></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/auth.js"></script>
+</body>
+</html>
