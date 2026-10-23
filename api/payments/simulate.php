@@ -79,6 +79,7 @@ try {
                      VALUES (?,?,?,?,'cho_lay_hang')"
                 )->execute([$code, $pay['order_id'], 'Giao Hàng Nhanh (GHN)', 'OF' . random_int(100000000, 999999999)]);
             }
+            $orderStatus = 'da_xac_nhan';
         }
     }
 

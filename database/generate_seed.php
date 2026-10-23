@@ -493,8 +493,8 @@ foreach (array_slice($deliveredOids, 0, 15) as $oid) {
     );
     // refund_amount thực tế = qty_acc * unit_price → cập nhật sau
     $out[] = sprintf(
-        "UPDATE return_items ri JOIN order_items oi ON oi.order_id = %d SET ri.refund_amount = ri.quantity_accepted * oi.unit_price WHERE ri.return_request_id = %d;",
-        $oid, $rid
+        "UPDATE return_items ri JOIN order_items oi ON oi.id = ri.order_item_id SET ri.refund_amount = ri.quantity_accepted * oi.unit_price WHERE ri.return_request_id = %d;",
+        $rid
     );
 }
 $out[] = '';

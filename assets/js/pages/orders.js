@@ -65,7 +65,7 @@
           (canManage() && NEXT_STATUS[o.status] && NEXT_STATUS[o.status].length
             ? '<button class="btn btn-sm btn-icon" data-status="' + o.id + '" title="Cập nhật trạng thái">' + OF.icon("refresh", "icon-sm") + "</button>"
             : "") +
-          (canManage() && o.status !== "da_huy" && o.status !== "da_giao"
+          (canManage() && o.status !== "da_huy" && o.status !== "da_giao" && o.status !== "dang_giao"
             ? '<button class="btn btn-sm btn-icon" data-cancel="' + o.id + '" title="Hủy đơn" style="color:var(--danger)">' + OF.icon("close", "icon-sm") + "</button>"
             : "") +
         "</div></td>" +

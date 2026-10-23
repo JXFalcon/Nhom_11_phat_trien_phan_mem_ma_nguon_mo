@@ -75,6 +75,11 @@ try {
         // Đánh dấu thanh toán failed nếu còn chờ
         $pdo->prepare("UPDATE payments SET status = 'that_bai', note = CONCAT(COALESCE(note,''), ' – Đơn bị hủy')
                        WHERE order_id = ? AND status = 'cho_xu_ly'")->execute([$id]);
+        // Hủy vận đơn còn đang xử lý/giao; vận đơn đã kết thúc giữ nguyên
+        $pdo->prepare(
+            "UPDATE shipments SET status = 'that_bai'
+             WHERE order_id = ? AND status IN ('cho_lay_hang', 'dang_van_chuyen')"
+        )->execute([$id]);
     } else {
         $pdo->prepare('UPDATE orders SET status = ? WHERE id = ?')->execute([$to, $id]);
     }
