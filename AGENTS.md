@@ -15,7 +15,7 @@ Hướng dẫn ngắn cho AI coding agent làm việc trong OrderFlow — POS PH
 ## Cấu hình DB — một nguồn sự thật
 
 - `config/database.php` là nơi DUY NHẤT đọc config; ưu tiên `OF_DB_HOST/PORT/NAME/USER/PASS` > `.env` ở root > mặc định XAMPP (127.0.0.1:3306, root, pass rỗng, db `orderflow`).
-- `.env` bị gitignore (đừng commit); `.env.example` là mẫu. Giá trị chứa `#` phải bọc quote, không thì bị cắt thành comment; BOM được ltrim.
+- `.env` bị gitignore (đừng commit); `.env.example` là mẫu. Giá trị chứa `#` phải bọc quote, không thì bị cắt thành comment; BOM được ltrim ; biến OF_HOLD_MINUTES (phút giữ hàng, 1..1440, mặc định 15) CHỈ đọc qua getenv khi khởi động php — ghi trong .env không có tác dụng.
 - Không hardcode credential — mọi file PHP lấy PDO qua `db()` trong `includes/bootstrap.php`.
 - Import `database.sql` sẽ `DROP DATABASE orderflow` rồi tạo lại — đừng import nhầm nếu DB đang có dữ liệu cần giữ.
 
@@ -37,12 +37,12 @@ Hướng dẫn ngắn cho AI coding agent làm việc trong OrderFlow — POS PH
 - `shipments.status` ENUM chỉ có `cho_lay_hang,dang_van_chuyen,da_giao,that_bai` (KHÔNG có `huy_bo`; KHÔNG có cột `note`).
 - Hủy đơn phải nằm trong 1 transaction `FOR UPDATE`: hoàn kho đúng 1 lần (cột `orders.stock_restored`) + payment `cho_xu_ly→that_bai` + shipment đang chạy → `that_bai`.
 - `payments/simulate.php` dùng `idempotency_key` chống xử lý trùng; thành công khi đơn `cho_xac_nhan` sẽ tự chuyển `da_xac_nhan` + tạo vận đơn nếu chưa có.
-- `orders.hold_expires_at` là hạn giữ hàng của đơn `cho_xac_nhan` (tạo đơn dùng `OF_HOLD_MINUTES`, mặc định 15, đọc qua `getenv`). `includes/orders_sweep.php` quét khi GET list/item (tối đa 200 đơn/lần, idempotent nhờ `stock_restored`); `api/orders/status.php` chặn xác nhận đơn quá hạn (chỉ cho hủy).
+- `orders.hold_expires_at` là hạn giữ hàng của đơn `cho_xac_nhan` (tạo đơn dùng `OF_HOLD_MINUTES`, mặc định 15, đọc qua `getenv`). `includes/orders_sweep.php` quét khi GET list/item (tối đa 200 đơn/lần, idempotent nhờ `stock_restored`); `api/orders/status.php` chặn xác nhận đơn quá hạn (chỉ cho hủy) ; orders.js hiện hạn giữ ở badge danh sách + banner modal (so thời gian ở JS chỉ để nhắc hiển thị — quyết định hủy luôn ở server, KHÔNG thêm logic hủy theo giờ client).
 - `payments/simulate.php` khóa đơn TRƯỚC rồi mới khóa payment (thứ tự `orders→payments` khớp `orders_sweep.php`); thanh toán đến muộn (đơn đã hủy/đang giao/đã giao hoặc quá hạn giữ hàng) trả `409` kèm `{late:true, order_status}`.
 - Xóa sản phẩm đã phát sinh dữ liệu sẽ chuyển `hidden`; xóa danh mục bị chặn nếu còn sản phẩm.
 - Đổi trả chỉ nhận đơn `da_giao`; duyệt với `restock` sẽ nhập lại kho.
-- `database/generate_seed.php` GHI ĐÈ `database.sql`; chỉ chạy khi có chủ ý, không cần DB.
-- Seed: `admin@orderflow.vn` / `nhanvien@orderflow.vn` / `khachhang@orderflow.vn`, mật khẩu `123456` — chỉ demo, không dùng prod.
+- `database/generate_seed.php` GHI ĐÈ `database.sql`; chỉ chạy khi có chủ ý, không cần DB ; schema orders phải có cột hold_expires_at + KEY idx_orders_hold — heredoc trong generator và database.sql phải khớp, chạy lại generator nếu lệch sẽ sinh database.sql import-hỏng.
+- Seed: `admin@orderflow.vn` / `nhanvien@orderflow.vn` / `khachhang@orderflow.vn`, mật khẩu `123456` — chỉ demo, không dùng prod ; seed đơn cho_xac_nhan chỉ được payment cho_xu_ly (không sinh thanh_cong khi đơn còn giữ hàng, tránh kịch bản "đã trả tiền mà hết hạn bị hủy").
 
 ## Gotchas repo
 
