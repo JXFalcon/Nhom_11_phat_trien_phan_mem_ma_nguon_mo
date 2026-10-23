@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quản lý thanh toán – OrderFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-topbar" class="topbar"></header>
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h1>Quản lý thanh toán</h1>
+            <p class="page-sub">Giao dịch mô phỏng: thành công / thất bại / chờ xử lý, đối chiếu với đơn hàng.</p>
+          </div>
+        </div>
+
+        <div class="alert-banner alert-warning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>
+          <div>
+            <strong>Thanh toán chỉ là mô phỏng</strong>
+            <p>Không kết nối cổng thanh toán thật, không xử lý tiền thật. Giai đoạn sau: tiếp nhận webhook với idempotency key – gửi lại không tăng/tiền không đổi lần thứ hai (yêu cầu kỹ thuật 1 &amp; 2 của đề tài).</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toolbar">
+            <div class="input-icon-wrap toolbar-search">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+              <input type="text" id="searchInput" class="form-control" placeholder="Tìm mã giao dịch, mã đơn…" />
+            </div>
+            <select id="statusFilter" class="form-select">
+              <option value="">Tất cả trạng thái</option>
+              <option value="thanh_cong">Thành công</option>
+              <option value="cho_xu_ly">Chờ xử lý</option>
+              <option value="that_bai">Thất bại</option>
+            </select>
+            <select id="methodFilter" class="form-select">
+              <option value="">Tất cả phương thức</option>
+              <option value="cod">COD</option>
+              <option value="bank">Chuyển khoản</option>
+              <option value="momo">Ví MoMo</option>
+            </select>
+            <div class="toolbar-spacer"></div>
+            <span class="muted" id="resultCount"></span>
+          </div>
+          <div class="card-body flush">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã giao dịch</th>
+                    <th>Mã đơn hàng</th>
+                    <th class="text-right">Số tiền</th>
+                    <th>Phương thức</th>
+                    <th>Trạng thái</th>
+                    <th>Thời điểm</th>
+                    <th class="text-right">Thao tác mô phỏng</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pagination-bar" id="paginationBar"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="assets/js/data.js"></script>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/pages/payments.js"></script>
+</body>
+</html>
