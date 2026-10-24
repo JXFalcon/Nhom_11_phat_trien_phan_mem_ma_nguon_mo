@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Shopee</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-topbar" class="topbar"></header>
+
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h1>Dashboard</h1>
+            <p class="page-sub">Số liệu đồng bộ trực tiếp từ cơ sở dữ liệu MySQL qua API (reports/summary).</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" id="btnRefresh">⟳ Làm mới dữ liệu</button>
+          </div>
+        </div>
+
+        <div class="alert-banner alert-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.2v.2"/></svg>
+          <div>
+            <strong>Dữ liệu đồng nhất</strong>
+            <p>Cùng nguồn với trang Báo cáo thống kê và các trang quản lý (API reports/summary.php) — doanh thu không tính đơn đã hủy.</p>
+          </div>
+        </div>
+
+        <div class="stat-grid" id="statGrid"></div>
+
+        <div style="display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px" id="chartRow">
+          <div class="card">
+            <div class="card-body">
+              <h3 style="display:flex;align-items:center;gap:8px">
+                <span class="stat-icon indigo" style="width:30px;height:30px;border-radius:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" style="width:16px;height:16px"><path d="M4.5 20v-6.5M10 20V8M15.5 20v-9M21 20V4.5"/><path d="M2.5 20h19"/></svg></span>
+                Doanh thu theo ngày
+              </h3>
+              <p class="muted" style="margin:6px 0 10px">Đơn đã xác nhận trở đi · 14 ngày gần nhất</p>
+              <div id="revenueChart"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <h3 style="display:flex;align-items:center;gap:8px">
+                <span class="stat-icon orange" style="width:30px;height:30px;border-radius:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 4"/></svg></span>
+                Cơ cấu trạng thái đơn
+              </h3>
+              <p class="muted" style="margin:6px 0 10px">Toàn bộ dữ liệu đơn hàng</p>
+              <div id="statusDonut"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px">
+          <div class="card-body" style="padding-bottom:6px">
+            <h3>Đơn hàng gần đây</h3>
+          </div>
+          <div class="card-body flush">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Ngày đặt</th>
+                    <th style="text-align:right">Tổng tiền</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="recentOrdersBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:20px">
+          <div class="card-body">
+            <h3>Cần xử lý</h3>
+            <p class="muted" style="margin:6px 0 4px">Các việc đang chờ thao tác của nhân viên.</p>
+            <div class="quick-list" id="pendingList" style="margin-top:8px"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/data.js?v=3"></script>
+  <script src="assets/js/api.js?v=3"></script>
+  <script src="assets/js/app.js?v=3"></script>
+  <script src="assets/js/pages/dashboard.js?v=3"></script>
+</body>
+</html>
