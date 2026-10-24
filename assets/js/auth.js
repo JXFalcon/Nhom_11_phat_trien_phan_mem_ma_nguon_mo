@@ -7,6 +7,16 @@
   const OF = window.OF;
   if (!OF) return;
 
+  const LANDING = {
+    admin: { href: "index.html", text: "Đang chuyển tới trang tổng quan…" },
+    staff: { href: "orders.html", text: "Đang chuyển tới trang quản lý đơn hàng…" },
+    customer: { href: "shop.html", text: "Đang chuyển tới Cửa hàng…" },
+  };
+
+  function landingFor(role) {
+    return LANDING[role] || LANDING.customer;
+  }
+
   /* ---------------- Kiểm tra định dạng ---------------- */
   const validators = {
     required(v) { return String(v || "").trim().length > 0; },
@@ -61,7 +71,7 @@
     // Nếu đã có token thì vào thẳng trang theo vai trò
     if (OF.session.getToken()) {
       const role = (OF.session.getUser() || {}).role || "customer";
-      window.location.replace(role === "customer" ? "orders.html" : "index.html");
+      window.location.replace(landingFor(role).href);
       return;
     }
     const form = document.getElementById("loginForm");
@@ -114,15 +124,9 @@
       if (remember && remember.checked) localStorage.setItem("orderflow.remember", "1");
       else localStorage.removeItem("orderflow.remember");
       const role = (res.data.user || {}).role || "customer";
-      const landing = role === "customer" ? "orders.html" : "index.html";
-      showAlert(
-        alertBox,
-        "success",
-        role === "customer"
-          ? "Đăng nhập thành công! Đang chuyển tới trang đơn hàng…"
-          : "Đăng nhập thành công! Đang chuyển tới trang quản trị…"
-      );
-      setTimeout(() => { window.location.href = landing; }, 500);
+      const landing = landingFor(role);
+      showAlert(alertBox, "success", "Đăng nhập thành công! " + landing.text);
+      setTimeout(() => { window.location.href = landing.href; }, 500);
     });
   }
 

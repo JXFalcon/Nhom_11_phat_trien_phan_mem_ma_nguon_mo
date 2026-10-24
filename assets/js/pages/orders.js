@@ -393,6 +393,22 @@
 
   /* ---------- Khởi tạo ---------- */
   document.addEventListener("DOMContentLoaded", function () {
+    const isCustomer = role() === "customer";
+    const heading = document.querySelector(".page-head h1");
+    const sub = document.querySelector(".page-sub");
+    const createBtn = document.getElementById("btnCreateOrder");
+    if (isCustomer) {
+      document.title = "Đơn của tôi – OrderFlow";
+      if (heading) heading.textContent = "Đơn của tôi";
+      if (sub) sub.textContent = "Theo dõi đơn hàng của bạn, hạn giữ hàng và trạng thái xử lý.";
+      if (createBtn) createBtn.classList.add("hidden");
+    } else {
+      document.title = "Quản lý đơn hàng – OrderFlow";
+      if (heading) heading.textContent = "Quản lý đơn hàng";
+      if (sub) sub.textContent = "Theo dõi vòng đời đơn: chờ xác nhận → đã xác nhận → đang giao → đã giao / đã hủy.";
+      if (createBtn) createBtn.addEventListener("click", openCreateForm);
+    }
+
     const qs = new URLSearchParams(window.location.search);
     if (qs.get("status")) {
       statusF = qs.get("status");
@@ -401,7 +417,6 @@
     }
     loadOrders();
 
-    document.getElementById("btnCreateOrder").addEventListener("click", openCreateForm);
     document.getElementById("searchInput").addEventListener("input", (e) => {
       keyword = e.target.value; page = 1; loadOrders();
     });

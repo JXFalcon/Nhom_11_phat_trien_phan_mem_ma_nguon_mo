@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Giỏ hàng – OrderFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-topbar" class="topbar"></header>
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h1>Giỏ hàng</h1>
+            <p class="page-sub">Kiểm tra sản phẩm, số lượng và thông tin nhận hàng trước khi chốt đơn.</p>
+          </div>
+        </div>
+
+        <div class="cart-layout">
+          <section class="card" id="cartListCard">
+            <div class="card-header">
+              <div class="card-title">Sản phẩm trong giỏ</div>
+              <span class="muted" id="cartSummaryText"></span>
+            </div>
+            <div class="card-body flush">
+              <div id="cartLines" class="cart-lines"></div>
+              <div id="cartEmpty" class="hidden"></div>
+            </div>
+          </section>
+          <aside class="card checkout-card" id="checkoutCard"></aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="assets/js/data.js"></script>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/pages/cart.js"></script>
+</body>
+</html>

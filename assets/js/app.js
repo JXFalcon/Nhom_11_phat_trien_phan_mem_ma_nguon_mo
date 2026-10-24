@@ -17,6 +17,7 @@
     ret: '<path d="M9.5 15 5 10.5 9.5 6"/><path d="M5 10.5h9a5.5 5.5 0 0 1 0 11h-2.5"/>',
     truck: '<rect x="1.5" y="6" width="13" height="11" rx="1.5"/><path d="M14.5 9.5h3.6l3.4 3.5V17h-7z"/><circle cx="5.8" cy="18.8" r="2"/><circle cx="17.8" cy="18.8" r="2"/>',
     card: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M6 15h4"/>',
+    cart: '<path d="M3 4h2.2l2.3 10.7a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.6L21 8H6.2"/><circle cx="10" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/>',
     chart: '<path d="M4.5 20v-6.5M10 20V8M15.5 20v-9M21 20V4.5"/><path d="M2.5 20h19"/>',
     users: '<circle cx="9" cy="8" r="3.2"/><path d="M2.8 20c.6-3.4 3.2-5.2 6.2-5.2s5.6 1.8 6.2 5.2"/><circle cx="17" cy="9" r="2.4"/><path d="M17.2 14.6c2.2.2 3.7 1.7 4 4.4"/>',
     logout: '<path d="M10 4H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20H10"/><path d="M15.5 8.5 19 12l-3.5 3.5M19 12H9"/>',
@@ -55,13 +56,66 @@
   OF.icon = icon;
 
   /* ================= Cấu hình điều hướng ================= */
-  /* Trang giới hạn vai trò: khách hàng (customer) không được mở. */
-  const PAGE_ROLES = {
-    "index.html": ["admin", "staff"],
-    "reports.html": ["admin", "staff"],
-    "products.html": ["admin", "staff"],
-    "categories.html": ["admin", "staff"],
-  };
+  function homePageFor(role) {
+    if (role === "customer") return "shop.html";
+    if (role === "staff") return "orders.html";
+    return "index.html";
+  }
+
+  const NAV = [
+    {
+      title: "Cửa hàng",
+      items: [
+        { href: "shop.html", icon: "box", label: "Cửa hàng", roles: ["admin", "staff", "customer"] },
+        { href: "cart.html", icon: "cart", label: "Giỏ hàng", roles: ["admin", "staff", "customer"] },
+      ],
+    },
+    {
+      title: "Đơn của tôi",
+      items: [
+        { href: "orders.html", icon: "clipboard", label: "Đơn của tôi", roles: ["customer"] },
+        { href: "returns.html", icon: "ret", label: "Đổi trả của tôi", roles: ["customer"] },
+      ],
+    },
+    {
+      title: "Thao tác",
+      items: [
+        { href: "index.html", icon: "home", label: "Tổng quan", roles: ["admin", "staff"] },
+        { href: "orders.html", icon: "clipboard", label: "Quản lý đơn hàng", roles: ["admin", "staff"] },
+        { href: "payments.html", icon: "card", label: "Quản lý thanh toán", roles: ["admin", "staff"] },
+        { href: "shipments.html", icon: "truck", label: "Quản lý giao hàng", roles: ["admin", "staff"] },
+        { href: "returns.html", icon: "ret", label: "Quản lý đổi trả", roles: ["admin", "staff"] },
+        { href: "reports.html", icon: "chart", label: "Báo cáo thống kê", roles: ["admin", "staff"] },
+      ],
+    },
+    {
+      title: "Quản trị",
+      items: [
+        { href: "products.html", icon: "box", label: "Quản lý sản phẩm", roles: ["admin", "staff"] },
+        { href: "categories.html", icon: "tag", label: "Danh mục", roles: ["admin"] },
+      ],
+    },
+  ];
+
+  function buildPageRoles() {
+    const map = {};
+    NAV.forEach((g) => g.items.forEach((it) => {
+      if (!it.roles) return;
+      if (!map[it.href]) map[it.href] = [];
+      it.roles.forEach((r) => {
+        if (map[it.href].indexOf(r) === -1) map[it.href].push(r);
+      });
+    }));
+    Object.keys(map).forEach((page) => {
+      if (map[page].length >= 3) delete map[page];
+    });
+    map["shipments.html"] = ["admin", "staff"];
+    map["payments.html"] = ["admin", "staff"];
+    return map;
+  }
+
+  /* Trang giới hạn vai trò: nguồn số liệu lấy từ NAV. */
+  const PAGE_ROLES = buildPageRoles();
 
   function allowedRoles(page) {
     return PAGE_ROLES[page] || null;
@@ -78,38 +132,6 @@
     return !!role && allow.indexOf(role) !== -1;
   }
 
-  /* Trang khách hàng được dùng sau khi đăng nhập */
-  function homePageFor(role) {
-    return role === "customer" ? "orders.html" : "index.html";
-  }
-
-  const NAV = [
-    {
-      title: "Tổng quan",
-      items: [{ href: "index.html", icon: "home", label: "Dashboard" }],
-    },
-    {
-      title: "Sản phẩm",
-      items: [
-        { href: "products.html", icon: "box", label: "Quản lý sản phẩm" },
-        { href: "categories.html", icon: "tag", label: "Danh mục" },
-      ],
-    },
-    {
-      title: "Đơn hàng",
-      items: [
-        { href: "orders.html", icon: "clipboard", label: "Quản lý đơn hàng" },
-        { href: "returns.html", icon: "ret", label: "Quản lý đổi trả" },
-        { href: "shipments.html", icon: "truck", label: "Quản lý giao hàng" },
-        { href: "payments.html", icon: "card", label: "Quản lý thanh toán" },
-      ],
-    },
-    {
-      title: "Phân tích",
-      items: [{ href: "reports.html", icon: "chart", label: "Báo cáo thống kê" }],
-    },
-  ];
-
   /* ================= Sidebar / Topbar ================= */
   function currentPage() {
     const path = window.location.pathname.split("/").pop();
@@ -117,9 +139,10 @@
   }
 
   function pageTitleFor(file) {
+    const role = currentRole();
     for (const g of NAV) {
       for (const it of g.items) {
-        if (it.href === file) return it.label;
+        if (it.href === file && (!it.roles || it.roles.indexOf(role) !== -1)) return it.label;
       }
     }
     return "OrderFlow";
@@ -129,6 +152,7 @@
     const el = document.getElementById("app-sidebar");
     if (!el) return;
     const file = currentPage();
+    const role = currentRole();
     let html =
       '<div class="sidebar-brand">' +
         '<div class="brand-logo">' + icon("packageCheck") + "</div>" +
@@ -139,7 +163,7 @@
       "</div>" +
       '<nav class="sidebar-nav">';
     NAV.forEach((g) => {
-      const items = g.items.filter((it) => canOpen(it.href));
+      const items = g.items.filter((it) => canOpen(it.href) && (!it.roles || it.roles.indexOf(role) !== -1));
       if (!items.length) return;
       html += '<div class="nav-section"><div class="nav-section-title">' + g.title + "</div>";
       items.forEach((it) => {
@@ -175,11 +199,18 @@
     if (!el) return;
     const u = OF.session.getUser() || { full_name: "Khách", role: "customer" };
     const file = currentPage();
+    const cartLink = u.role === "customer"
+      ? '<a class="topbar-cart" id="topbarCart" href="cart.html" title="Giỏ hàng" aria-label="Giỏ hàng">' +
+          icon("cart") + '<span class="cart-count hidden" id="cartCount">0</span></a>'
+      : "";
+    const homeLabel = u.role === "customer" ? "Cửa hàng" : (u.role === "staff" ? "Quản lý đơn hàng" : "Trang tổng quan");
+    const homeIcon = u.role === "customer" ? "box" : (u.role === "staff" ? "clipboard" : "home");
     el.innerHTML =
       '<button class="topbar-menu-btn" id="sidebarToggle" aria-label="Mở menu">' + icon("menu") + "</button>" +
       '<div class="topbar-title">' + pageTitleFor(file) + "</div>" +
       '<div class="topbar-spacer"></div>' +
       '<div class="topbar-badge" title="Backend PHP + MySQL"><span class="dot"></span> MySQL kết nối</div>' +
+      cartLink +
       '<div class="topbar-user">' +
         '<button class="user-btn" id="userMenuBtn">' +
           '<span class="avatar">' + OF.escapeHtml(initials(u.full_name)) + "</span>" +
@@ -190,8 +221,8 @@
           icon("chevDown", "icon-sm") +
         "</button>" +
         '<div class="user-menu hidden" id="userMenu">' +
-          '<a class="user-menu-item" href="' + homePageFor(u.role) + '">' + icon(u.role === "customer" ? "clipboard" : "home") +
-            (u.role === "customer" ? "Đơn hàng của tôi" : "Trang tổng quan") + "</a>" +
+          '<a class="user-menu-item" href="' + homePageFor(u.role) + '">' + icon(homeIcon) +
+            OF.escapeHtml(homeLabel) + "</a>" +
           '<div class="user-menu-divider"></div>' +
           '<button class="user-menu-item danger" id="logoutBtn">' + icon("logout") + "Đăng xuất</button>" +
         "</div>";
@@ -222,6 +253,8 @@
     if (toggle) {
       toggle.addEventListener("click", () => document.body.classList.toggle("sidebar-open"));
     }
+
+    if (OF.cart) OF.cart.refreshBadge();
   }
 
   /* ================= Bảo vệ trang (cần đăng nhập + quyền) ================= */
@@ -458,11 +491,100 @@
   };
   OF.charts = { barChart, donutChart, CHART_COLORS };
 
+  /* ================= Giỏ hàng (localStorage theo user) ================= */
+  function cartKey() {
+    const u = OF.session.getUser() || {};
+    return "orderflow.cart." + (u.id != null ? u.id : "guest");
+  }
+
+  function cartRead() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(cartKey()) || "[]");
+      return Array.isArray(arr) ? arr.filter((it) => it && Number(it.product_id) > 0) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function cartWrite(items) {
+    localStorage.setItem(cartKey(), JSON.stringify(items));
+    refreshCartBadge();
+  }
+
+  function cartCount() {
+    return cartRead().reduce((s, it) => s + Math.max(0, Number(it.quantity) || 0), 0);
+  }
+
+  function cartAdd(productId, qty, product) {
+    const pid = Number(productId);
+    if (!pid) return;
+    const addQty = Math.max(1, Number(qty) || 1);
+    const snap = product || {};
+    const stock = Number(snap.stock);
+    const max = Number.isFinite(stock) && stock > 0 ? stock : Infinity;
+    const items = cartRead();
+    const found = items.find((it) => Number(it.product_id) === pid);
+    if (found) {
+      found.quantity = Math.min(max, Math.max(1, Number(found.quantity) || 1) + addQty);
+      if (snap.name) found.name = snap.name;
+      if (snap.price != null) found.price = Number(snap.price) || 0;
+      if (snap.emoji) found.emoji = snap.emoji;
+      if (Number.isFinite(stock)) found.stock = stock;
+    } else {
+      items.push({
+        product_id: pid,
+        quantity: Math.min(max, addQty),
+        name: snap.name || "",
+        price: Number(snap.price) || 0,
+        emoji: snap.emoji || "📦",
+        stock: Number.isFinite(stock) ? stock : null,
+      });
+    }
+    cartWrite(items);
+  }
+
+  function cartRemove(productId) {
+    const pid = Number(productId);
+    cartWrite(cartRead().filter((it) => Number(it.product_id) !== pid));
+  }
+
+  function cartSetQty(productId, qty) {
+    const pid = Number(productId);
+    const items = cartRead();
+    const it = items.find((x) => Number(x.product_id) === pid);
+    if (!it) return;
+    const stock = Number(it.stock);
+    const max = Number.isFinite(stock) && stock > 0 ? stock : Infinity;
+    it.quantity = Math.max(1, Math.min(max, Number(qty) || 1));
+    cartWrite(items);
+  }
+
+  function refreshCartBadge() {
+    const el = document.getElementById("cartCount");
+    if (!el) return;
+    const n = cartCount();
+    el.textContent = String(n);
+    el.classList.toggle("hidden", n === 0);
+  }
+
+  OF.cart = {
+    key: cartKey,
+    read: cartRead,
+    write: cartWrite,
+    count: cartCount,
+    add: cartAdd,
+    remove: cartRemove,
+    setQty: cartSetQty,
+    clear: () => cartWrite([]),
+    refreshBadge: refreshCartBadge,
+  };
+
   /* ================= Boot ================= */
   document.addEventListener("DOMContentLoaded", function () {
     if (!guard()) return;
     renderSidebar();
     renderTopbar();
+    OF.cart.refreshBadge();
     // Xác thực phiên với backend (đồng thời làm mới thông tin user)
     if (OF.session.getToken()) {
       (async function verifySession() {

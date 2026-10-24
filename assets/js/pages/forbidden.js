@@ -8,14 +8,16 @@
   if (!OF) return;
 
   const PAGE_NAMES = {
-    "index.html": "Dashboard tổng quan",
-    "reports.html": "Báo cáo thống kê",
-    "products.html": "Quản lý sản phẩm",
+    "cart.html": "Giỏ hàng",
     "categories.html": "Quản lý danh mục",
+    "index.html": "Tổng quan",
     "orders.html": "Quản lý đơn hàng",
+    "payments.html": "Quản lý thanh toán",
+    "products.html": "Quản lý sản phẩm",
+    "reports.html": "Báo cáo thống kê",
     "returns.html": "Quản lý đổi trả",
     "shipments.html": "Quản lý giao hàng",
-    "payments.html": "Quản lý thanh toán",
+    "shop.html": "Cửa hàng",
   };
 
   const ROLE_LABELS = {
@@ -25,10 +27,20 @@
   };
 
   const ROLE_ALLOWED_PAGES = {
-    admin: ["index.html", "reports.html", "products.html", "categories.html"],
-    staff: ["index.html", "reports.html", "products.html", "categories.html"],
-    customer: [],
+    admin: ["index.html", "reports.html", "products.html", "categories.html", "orders.html", "returns.html", "shipments.html", "payments.html", "shop.html", "cart.html"],
+    staff: ["index.html", "reports.html", "products.html", "orders.html", "returns.html", "shipments.html", "payments.html", "shop.html", "cart.html"],
+    customer: ["shop.html", "cart.html", "orders.html", "returns.html"],
   };
+
+  const HOME_BY_ROLE = {
+    admin: { href: "index.html", text: "Về trang tổng quan" },
+    staff: { href: "orders.html", text: "Đi tới Quản lý đơn hàng" },
+    customer: { href: "shop.html", text: "Đi tới Cửa hàng" },
+  };
+
+  function goHomeFor(role) {
+    return HOME_BY_ROLE[role] || HOME_BY_ROLE.customer;
+  }
 
   function blockedPage() {
     const q = new URLSearchParams(window.location.search);
@@ -48,7 +60,7 @@
       msgEl.textContent =
         "Tài khoản " + ((user || {}).full_name || "của bạn") +
         " đang đăng nhập với vai trò " + (ROLE_LABELS[role] || role || "không xác định") +
-        " nên không được mở “" + name + "”. Trang này chỉ dành cho quản trị viên và nhân viên xử lý đơn.";
+        " nên không được mở “" + name + "”. Trang này không nằm trong quyền truy cập của vai trò hiện tại.";
     }
 
     const set = (id, val) => {
@@ -61,8 +73,9 @@
 
     const home = document.getElementById("goHomeBtn");
     if (home) {
-      home.textContent = role === "customer" ? "Đi tới Đơn hàng của tôi" : "Về trang tổng quan";
-      home.setAttribute("href", role === "customer" ? "orders.html" : "index.html");
+      const dest = goHomeFor(role);
+      home.textContent = dest.text;
+      home.setAttribute("href", dest.href);
     }
 
     const adminBtn = document.getElementById("goAdminBtn");

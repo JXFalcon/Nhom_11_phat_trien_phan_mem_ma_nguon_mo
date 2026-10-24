@@ -232,7 +232,12 @@
     loadCategories();
     loadProducts();
 
-    document.getElementById("btnAddProduct").addEventListener("click", () => openForm(null));
+    const addBtn = document.getElementById("btnAddProduct");
+    if (isAdmin()) {
+      if (addBtn) addBtn.addEventListener("click", () => openForm(null));
+    } else if (addBtn) {
+      addBtn.classList.add("hidden");
+    }
     document.getElementById("searchInput").addEventListener("input", (e) => {
       keyword = e.target.value;
       page = 1;

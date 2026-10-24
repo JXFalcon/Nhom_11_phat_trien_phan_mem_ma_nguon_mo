@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cửa hàng – OrderFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-topbar" class="topbar"></header>
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h1>Cửa hàng</h1>
+            <p class="page-sub">Chọn sản phẩm, thêm vào giỏ và đặt hàng. Giá chính thức do hệ thống chốt khi tạo đơn.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toolbar">
+            <div class="input-icon-wrap toolbar-search">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+              <input type="text" id="shopSearch" class="form-control" placeholder="Tìm sản phẩm theo tên hoặc mã…" />
+            </div>
+            <select id="shopCategory" class="form-select">
+              <option value="">Tất cả danh mục</option>
+            </select>
+            <div class="toolbar-spacer"></div>
+            <span class="muted" id="shopStatus"></span>
+          </div>
+          <div class="card-body">
+            <div id="shopGrid" class="shop-grid"></div>
+          </div>
+          <div class="pagination-bar" id="shopPagination"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="assets/js/data.js"></script>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/pages/shop.js"></script>
+</body>
+</html>
