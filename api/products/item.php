@@ -16,7 +16,7 @@ if ($id <= 0) {
 $pdo = db();
 
 if ($method === 'GET') {
-    require_auth();
+    $u = require_auth();
     $st = $pdo->prepare(
         'SELECT p.*, c.name AS category_name
          FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?'
@@ -24,6 +24,9 @@ if ($method === 'GET') {
     $st->execute([$id]);
     $row = $st->fetch();
     if (!$row) {
+        json_fail('Không tìm thấy sản phẩm.', 404);
+    }
+    if ($row['status'] === 'hidden' && $u['role'] === 'customer') {
         json_fail('Không tìm thấy sản phẩm.', 404);
     }
     $row['price'] = (float)$row['price'];
@@ -46,6 +49,7 @@ if ($method === 'PUT') {
     }
     $name = trim((string)($in['name'] ?? $p['name']));
     $sku = trim((string)($in['sku'] ?? $p['sku']));
+    $description = trim((string)($in['description'] ?? ($p['description'] ?? '')));
     $cat = (int)($in['category_id'] ?? $p['category_id']);
     $price = array_key_exists('price', $in) ? (float)$in['price'] : (float)$p['price'];
     $stock = array_key_exists('stock', $in) ? (int)$in['stock'] : (int)$p['stock'];
@@ -72,6 +76,9 @@ if ($method === 'PUT') {
     if ($stock < 0) {
         $errors['stock'] = 'Tồn kho phải là số không âm.';
     }
+    if (mb_strlen($description) > 2000) {
+        $errors['description'] = 'Mô tả sản phẩm tối đa 2000 ký tự.';
+    }
     $chk = $pdo->prepare('SELECT id FROM categories WHERE id = ?');
     $chk->execute([$cat]);
     if (!$chk->fetch()) {
@@ -84,8 +91,9 @@ if ($method === 'PUT') {
     $pdo->beginTransaction();
     try {
         $diff = $stock - (int)$p['stock'];
-        $up = $pdo->prepare('UPDATE products SET sku=?, name=?, category_id=?, price=?, stock=?, variants=?, emoji=?, status=? WHERE id=?');
-        $up->execute([$sku, $name, $cat, $price, $stock, $variants ?: null, $emoji ?: null, $status, $id]);
+        $descriptionValue = $description === '' ? null : $description;
+        $up = $pdo->prepare('UPDATE products SET sku=?, name=?, description=?, category_id=?, price=?, stock=?, variants=?, emoji=?, status=? WHERE id=?');
+        $up->execute([$sku, $name, $descriptionValue, $cat, $price, $stock, $variants ?: null, $emoji ?: null, $status, $id]);
         if ($diff !== 0) {
             $pdo->prepare("INSERT INTO inventory_movements (product_id, change_type, quantity, note) VALUES (?, 'dieu_chinh', ?, 'Điều chỉnh tồn kho khi sửa sản phẩm')")
                 ->execute([$id, $diff]);

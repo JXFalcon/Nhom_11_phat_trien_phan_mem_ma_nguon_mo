@@ -18,6 +18,7 @@
     "returns.html": "Quản lý đổi trả",
     "shipments.html": "Quản lý giao hàng",
     "shop.html": "Cửa hàng",
+    "shop-item.html": "Chi tiết sản phẩm",
   };
 
   const ROLE_LABELS = {

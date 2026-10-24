@@ -1,15 +1,17 @@
 /* ============================================================
    OrderFlow – shop.js (Cửa hàng)
-   Danh sách sản phẩm đang bán + chi tiết + thêm vào giỏ.
+   Danh sách sản phẩm đang bán; bấm card chuyển sang trang chi tiết.
    ============================================================ */
 (function () {
   "use strict";
   const OF = window.OF;
   const PER_PAGE = 12;
 
+  const urlCategory = new URLSearchParams(window.location.search).get("category_id");
+
   let page = 1;
   let keyword = "";
-  let categoryId = "";
+  let categoryId = urlCategory && /^\d+$/.test(urlCategory) ? urlCategory : "";
   let categories = [];
 
   const EMOJI_FALLBACK = "📦";
@@ -26,18 +28,19 @@
     const res = await OF.api.get("categories/index.php");
     if (!res.success) return;
     categories = Array.isArray(res.data) ? res.data : [];
+    if (categoryId && !categories.some((c) => Number(c.id) === Number(categoryId))) categoryId = "";
     const sel = document.getElementById("shopCategory");
     if (!sel) return;
     const current = sel.value;
     sel.innerHTML = '<option value="">Tất cả danh mục</option>' +
       categories.map((c) => '<option value="' + Number(c.id) + '">' + OF.escapeHtml(c.name) + "</option>").join("");
-    sel.value = current;
+    sel.value = categoryId || current;
   }
 
   function cardHTML(p) {
     const stock = Number(p.stock) || 0;
     const out = stock <= 0;
-    return '<article class="shop-card" data-shop-id="' + Number(p.id) + '" tabindex="0" role="button" aria-label="' + OF.escapeHtml(p.name) + '">' +
+    return '<article class="shop-card" data-shop-id="' + Number(p.id) + '" tabindex="0" role="button" aria-label="Xem chi tiết sản phẩm ' + OF.escapeHtml(p.name) + '">' +
       '<div class="shop-thumb' + (out ? " out" : "") + '">' + OF.escapeHtml(p.emoji || EMOJI_FALLBACK) + "</div>" +
       '<div class="shop-body">' +
         '<div class="shop-name">' + OF.escapeHtml(p.name) + "</div>" +
@@ -45,6 +48,7 @@
         '<div class="shop-stock' + (stock > 0 && stock < 10 ? " warning" : "") + '">' +
           (out ? "Hết hàng" : "Còn " + stock + " sản phẩm") +
         "</div>" +
+        '<div class="shop-card-action" aria-hidden="true">Xem chi tiết <span>→</span></div>' +
       "</div>" +
     "</article>";
   }
@@ -86,8 +90,7 @@
 
     const openByCard = (card) => {
       const id = Number(card.getAttribute("data-shop-id"));
-      const product = items.find((p) => Number(p.id) === id);
-      if (product) openDetail(product);
+      if (id > 0) window.location.href = "shop-item.html?id=" + id;
     };
     grid.querySelectorAll("[data-shop-id]").forEach((card) => {
       card.addEventListener("click", () => openByCard(card));
@@ -102,56 +105,6 @@
     OF.ui.renderPagination(pager, total, page, PER_PAGE, (p) => {
       page = p;
       loadProducts();
-    });
-  }
-
-  function variantHTML(p) {
-    const list = String(p.variants || "").split(";").map((v) => v.trim()).filter(Boolean);
-    if (!list.length) return "";
-    return '<div class="shop-chips">' +
-      list.map((v) => '<span class="shop-chip">' + OF.escapeHtml(v) + "</span>").join("") +
-      "</div>";
-  }
-
-  function openDetail(p) {
-    const stock = Number(p.stock) || 0;
-    const out = stock <= 0;
-    const body =
-      '<div class="shop-detail">' +
-        '<div class="shop-detail-thumb' + (out ? " out" : "") + '">' + OF.escapeHtml(p.emoji || EMOJI_FALLBACK) + "</div>" +
-        '<div class="shop-detail-info">' +
-          '<h3 class="shop-detail-name">' + OF.escapeHtml(p.name) + "</h3>" +
-          '<div class="shop-price">' + OF.fmt.money(p.price) + "</div>" +
-          '<div class="shop-stock' + (stock > 0 && stock < 10 ? " warning" : "") + '">' +
-            (out ? "Hết hàng" : "Còn " + stock + " sản phẩm") +
-          "</div>" +
-          variantHTML(p) +
-          '<div class="form-group mt-16"><label class="form-label" for="shopQty">Số lượng</label>' +
-            '<input class="form-control" id="shopQty" type="number" min="1" max="' + Math.max(stock, 1) + '" step="1" value="1"' + (out ? " disabled" : "") + " />" +
-          "</div>" +
-        "</div>" +
-      "</div>";
-
-    OF.ui.openModal({
-      title: "Chi tiết sản phẩm",
-      size: "md",
-      body,
-      footer:
-        '<button class="btn" data-close>Đóng</button>' +
-        '<button class="btn btn-primary" id="shopAddCart"' + (out ? " disabled" : "") + ">" +
-          (out ? "Hết hàng" : "Thêm vào giỏ") +
-        "</button>",
-      onOpen(api) {
-        const btn = api.el.querySelector("#shopAddCart");
-        if (!btn || out) return;
-        btn.addEventListener("click", () => {
-          const qtyInput = api.el.querySelector("#shopQty");
-          const qty = Math.max(1, Math.min(stock, Number(qtyInput.value) || 1));
-          OF.cart.add(p.id, qty, p);
-          OF.ui.toast("success", "Đã thêm “" + p.name + "” vào giỏ hàng.");
-          api.close();
-        });
-      },
     });
   }
 

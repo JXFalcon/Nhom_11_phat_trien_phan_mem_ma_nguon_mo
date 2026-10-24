@@ -139,6 +139,12 @@
           '<div class="form-group"><label class="form-label">Biến thể (các cách cách nhau bởi dấu ;)</label>' +
             '<input class="form-control" id="pVariants" placeholder="256GB / Đen; 512GB / Trắng" value="' + OF.escapeHtml(editing ? editing.variants : "") + '" />' +
             '<div class="form-hint">Mỗi biến thể cách nhau bằng dấu chấm phẩy.</div></div>' +
+          '<div class="form-group"><label class="form-label" for="pDesc">Mô tả sản phẩm</label>' +
+            '<textarea class="form-control" id="pDesc" rows="4" maxlength="2000" placeholder="Mô tả ngắn về sản phẩm, chất liệu, tính năng nổi bật…">' +
+              OF.escapeHtml(editing ? (editing.description || "") : "") +
+            "</textarea>" +
+            '<div class="form-hint">Tối đa 2000 ký tự.</div>' +
+            '<div class="form-error" data-error-for="pDesc"></div></div>' +
           '<div class="form-group"><label class="form-label">Trạng thái</label>' +
             '<select class="form-select" id="pStatus">' +
               '<option value="active"' + (editing && editing.status === "active" ? " selected" : "") + '>Đang bán</option>' +
@@ -177,21 +183,23 @@
     const price = Number(document.getElementById("pPrice").value);
     const stock = Number(document.getElementById("pStock").value);
     const variants = document.getElementById("pVariants").value.trim();
+    const description = document.getElementById("pDesc").value.trim();
     const emoji = document.getElementById("pEmoji").value;
     const status = document.getElementById("pStatus").value;
 
     let ok = true;
     setErr("pName", null); setErr("pSku", null); setErr("pCategory", null);
-    setErr("pPrice", null); setErr("pStock", null);
+    setErr("pPrice", null); setErr("pStock", null); setErr("pDesc", null);
     if (name.length < 2) { setErr("pName", "Tên sản phẩm phải có ít nhất 2 ký tự."); ok = false; }
     if (!sku) { setErr("pSku", "Vui lòng nhập mã sản phẩm."); ok = false; }
     if (!cat) { setErr("pCategory", "Hãy chọn danh mục."); ok = false; }
     if (!price || price < 0) { setErr("pPrice", "Giá bán phải lớn hơn 0."); ok = false; }
     if (isNaN(stock) || stock < 0) { setErr("pStock", "Tồn kho phải là số không âm."); ok = false; }
+    if (description.length > 2000) { setErr("pDesc", "Mô tả sản phẩm tối đa 2000 ký tự."); ok = false; }
     if (!ok) return;
 
     const body = {
-      name, sku, category_id: Number(cat), price, stock, variants, emoji, status,
+      name, sku, category_id: Number(cat), price, stock, variants, description, emoji, status,
     };
     const res = editing
       ? await OF.api.put("products/item.php?id=" + editing.id, body)
@@ -203,6 +211,7 @@
       else if (errs.category_id) setErr("pCategory", errs.category_id);
       else if (errs.price) setErr("pPrice", errs.price);
       else if (errs.stock) setErr("pStock", errs.stock);
+      else if (errs.description) setErr("pDesc", errs.description);
       else OF.ui.toast("error", res.message || "Lưu sản phẩm thất bại.");
       return;
     }

@@ -62,6 +62,7 @@ if ($method === 'POST') {
     $in = request_json();
     $name = trim((string)($in['name'] ?? ''));
     $sku = trim((string)($in['sku'] ?? ''));
+    $description = trim((string)($in['description'] ?? ''));
     $cat = (int)($in['category_id'] ?? 0);
     $price = (float)($in['price'] ?? 0);
     $stock = (int)($in['stock'] ?? 0);
@@ -91,23 +92,27 @@ if ($method === 'POST') {
     if ($stock < 0) {
         $errors['stock'] = 'Tồn kho phải là số không âm.';
     }
+    if (mb_strlen($description) > 2000) {
+        $errors['description'] = 'Mô tả sản phẩm tối đa 2000 ký tự.';
+    }
     if ($errors) {
         json_fail('Dữ liệu sản phẩm không hợp lệ.', 422, $errors);
     }
+    $descriptionValue = $description === '' ? null : $description;
     $exists = $pdo->prepare('SELECT id FROM products WHERE sku = ?');
     $exists->execute([$sku]);
     if ($exists->fetch()) {
         json_fail('Mã sản phẩm đã tồn tại.', 409, ['sku' => 'Đã tồn tại.']);
     }
-    $ins = $pdo->prepare('INSERT INTO products (sku, name, category_id, price, stock, variants, emoji, status) VALUES (?,?,?,?,?,?,?,?)');
-    $ins->execute([$sku, $name, $cat, $price, $stock, $variants ?: null, $emoji ?: null, $status]);
+    $ins = $pdo->prepare('INSERT INTO products (sku, name, category_id, price, stock, variants, emoji, status, description) VALUES (?,?,?,?,?,?,?,?,?)');
+    $ins->execute([$sku, $name, $cat, $price, $stock, $variants ?: null, $emoji ?: null, $status, $descriptionValue]);
     $id = (int)$pdo->lastInsertId();
     // Ghi phong trào tồn kho ban đầu
     if ($stock > 0) {
         $pdo->prepare("INSERT INTO inventory_movements (product_id, change_type, quantity, note) VALUES (?, 'nhap', ?, 'Tồn kho ban đầu khi tạo sản phẩm')")
             ->execute([$id, $stock]);
     }
-    json_ok(['id' => $id, 'sku' => $sku, 'name' => $name, 'category_id' => $cat, 'price' => $price, 'stock' => $stock, 'variants' => $variants, 'emoji' => $emoji, 'status' => $status], 'Đã thêm sản phẩm.', 201);
+    json_ok(['id' => $id, 'sku' => $sku, 'name' => $name, 'description' => $descriptionValue, 'category_id' => $cat, 'price' => $price, 'stock' => $stock, 'variants' => $variants, 'emoji' => $emoji, 'status' => $status], 'Đã thêm sản phẩm.', 201);
 }
 
 json_fail('Phương thức không được hỗ trợ.', 405);

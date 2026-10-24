@@ -15,11 +15,13 @@
         <div class="page-head">
           <div>
             <h1>Giỏ hàng</h1>
-            <p class="page-sub">Kiểm tra sản phẩm, số lượng và thông tin nhận hàng trước khi chốt đơn.</p>
+            <p class="page-sub">Rà soát sản phẩm và hoàn tất đơn hàng trong vài bước đơn giản.</p>
           </div>
         </div>
 
-        <div class="cart-layout">
+        <ol class="checkout-progress hidden" id="checkoutProgress" aria-label="Tiến trình đặt hàng"></ol>
+
+        <div class="cart-layout" id="cartStepA">
           <section class="card" id="cartListCard">
             <div class="card-header">
               <div class="card-title">Sản phẩm trong giỏ</div>
@@ -32,6 +34,28 @@
           </section>
           <aside class="card checkout-card" id="checkoutCard"></aside>
         </div>
+
+        <div class="checkout-layout hidden" id="cartStepB">
+          <section class="card" id="checkoutFormCard">
+            <div class="card-header">
+              <div class="card-title">Thông tin đặt hàng</div>
+            </div>
+            <div class="card-body" id="checkoutForm"></div>
+          </section>
+          <aside class="card checkout-card" id="checkoutSummary"></aside>
+        </div>
+
+        <div class="checkout-layout hidden" id="cartStepC">
+          <section class="card" id="checkoutReviewCard">
+            <div class="card-header">
+              <div class="card-title">Xác nhận đơn hàng</div>
+            </div>
+            <div class="card-body" id="checkoutReview"></div>
+          </section>
+          <aside class="card checkout-card" id="reviewSummary"></aside>
+        </div>
+
+        <div id="cartSuccess" class="hidden"></div>
       </main>
     </div>
   </div>

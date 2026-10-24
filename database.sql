@@ -41,6 +41,7 @@ CREATE TABLE products (
   id INT UNSIGNED NOT NULL AUTO_INCREMENT,
   sku VARCHAR(30) NOT NULL,
   name VARCHAR(150) NOT NULL,
+  description TEXT DEFAULT NULL,
   category_id INT UNSIGNED DEFAULT NULL,
   price DECIMAL(14,0) NOT NULL DEFAULT 0 COMMENT 'Giá hiện tại (đ có thể đổi)',
   stock INT NOT NULL DEFAULT 0 COMMENT 'Lượng hàng có thể bán',
@@ -272,61 +273,61 @@ INSERT INTO categories (id, code, name, description, emoji) VALUES (7, 'DM07', '
 INSERT INTO categories (id, code, name, description, emoji) VALUES (8, 'DM08', 'Thời trang', 'Áo khoác, giày thể thao', '👟');
 
 -- Sản phẩm (stock = lượng có thể bán)
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (1, 'SP-1001', 'iPhone 15 Pro Max 256GB', (SELECT id FROM (SELECT id FROM categories WHERE code='DM01') t), 34990000, 42, '256GB / Titan Tự nhiên; 512GB / Xanh; 1TB / Đen', '📱');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (1, 'SP-1001', 'iPhone 15 Pro Max 256GB', (SELECT id FROM (SELECT id FROM categories WHERE code='DM01') t), 34990000, 42, '256GB / Titan Tự nhiên; 512GB / Xanh; 1TB / Đen', '📱', 'iPhone 15 Pro Max khung titan chuẩn hàng không, chip A17 Pro, camera chính 48MP và màn hình 6.7 inch ProMotion. Phiên bản 256GB phù hợp nhu cầu lưu trữ hàng ngày.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (1, '256GB / Titan Tự nhiên', 14);
 INSERT INTO product_variants (product_id, name, stock) VALUES (1, '512GB / Xanh', 14);
 INSERT INTO product_variants (product_id, name, stock) VALUES (1, '1TB / Đen', 14);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (2, 'SP-1002', 'Samsung Galaxy S24 Ultra', (SELECT id FROM (SELECT id FROM categories WHERE code='DM01') t), 27990000, 28, '256GB / Tím; 512GB / Xám', '📱');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (2, 'SP-1002', 'Samsung Galaxy S24 Ultra', (SELECT id FROM (SELECT id FROM categories WHERE code='DM01') t), 27990000, 28, '256GB / Tím; 512GB / Xám', '📱', 'Samsung Galaxy S24 Ultra với bút S Pen, camera 200MP, màn hình Dynamic AMOLED 2X 6.8 inch và chip Snapdragon 8 Gen 3. Hiệu năng mạnh mẽ cho công việc và giải trí.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (2, '256GB / Tím', 14);
 INSERT INTO product_variants (product_id, name, stock) VALUES (2, '512GB / Xám', 14);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (3, 'SP-1003', 'Xiaomi 14T Pro 5G', (SELECT id FROM (SELECT id FROM categories WHERE code='DM01') t), 12990000, 55, '256GB / Đen; 512GB / Xanh', '📱');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (3, 'SP-1003', 'Xiaomi 14T Pro 5G', (SELECT id FROM (SELECT id FROM categories WHERE code='DM01') t), 12990000, 55, '256GB / Đen; 512GB / Xanh', '📱', 'Xiaomi 14T Pro 5G trang bị camera Leica, chip Dimensity 9300+, sạc nhanh 120W và màn hình AMOLED 144Hz. Lựa chọn cân bằng giữa hiệu năng và giá.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (3, '256GB / Đen', 28);
 INSERT INTO product_variants (product_id, name, stock) VALUES (3, '512GB / Xanh', 28);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (4, 'SP-1004', 'MacBook Air M3 13-inch', (SELECT id FROM (SELECT id FROM categories WHERE code='DM02') t), 28990000, 18, '8GB/256GB; 16GB/512GB', '💻');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (4, 'SP-1004', 'MacBook Air M3 13-inch', (SELECT id FROM (SELECT id FROM categories WHERE code='DM02') t), 28990000, 18, '8GB/256GB; 16GB/512GB', '💻', 'MacBook Air M3 13 inch mỏng nhẹ, chip Apple M3 tiết kiệm điện, màn hình Liquid Retina và thời lượng pin cả ngày. Phù hợp học tập, văn phòng và sáng tạo nội dung.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (4, '8GB/256GB', 9);
 INSERT INTO product_variants (product_id, name, stock) VALUES (4, '16GB/512GB', 9);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (5, 'SP-1005', 'Dell XPS 13 Plus', (SELECT id FROM (SELECT id FROM categories WHERE code='DM02') t), 31500000, 12, '16GB/512GB / Bạch kim', '💻');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (5, 'SP-1005', 'Dell XPS 13 Plus', (SELECT id FROM (SELECT id FROM categories WHERE code='DM02') t), 31500000, 12, '16GB/512GB / Bạch kim', '💻', 'Dell XPS 13 Plus với thiết kế viền siêu mỏng, bàn phím không viền và màn hình 13.4 inch sắc nét. Cấu hình 16GB RAM, SSD 512GB đáp ứng công việc chuyên nghiệp.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (5, '16GB/512GB / Bạch kim', 12);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (6, 'SP-1006', 'ASUS ROG Strix G16', (SELECT id FROM (SELECT id FROM categories WHERE code='DM02') t), 39990000, 9, '16GB/1TB / Đen; 32GB/1TB', '💻');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (6, 'SP-1006', 'ASUS ROG Strix G16', (SELECT id FROM (SELECT id FROM categories WHERE code='DM02') t), 39990000, 9, '16GB/1TB / Đen; 32GB/1TB', '💻', 'Laptop gaming ASUS ROG Strix G16 trang bị card đồ họa rời, màn hình tần số quét cao và hệ thống tản nhiệt nâng cấp. Lựa chọn cho game thủ và người dựng video.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (6, '16GB/1TB / Đen', 5);
 INSERT INTO product_variants (product_id, name, stock) VALUES (6, '32GB/1TB', 5);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (7, 'SP-1007', 'iPad Air M2 11-inch', (SELECT id FROM (SELECT id FROM categories WHERE code='DM03') t), 15990000, 24, '64GB WiFi; 256GB WiFi', '📟');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (7, 'SP-1007', 'iPad Air M2 11-inch', (SELECT id FROM (SELECT id FROM categories WHERE code='DM03') t), 15990000, 24, '64GB WiFi; 256GB WiFi', '📟', 'iPad Air M2 11 inch mỏng nhẹ, chip Apple M2, hỗ trợ Apple Pencil và Magic Keyboard. Màn hình Liquid Retina sắc nét cho học tập, ghi chú và giải trí.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (7, '64GB WiFi', 12);
 INSERT INTO product_variants (product_id, name, stock) VALUES (7, '256GB WiFi', 12);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (8, 'SP-1008', 'Samsung Galaxy Tab S9 FE', (SELECT id FROM (SELECT id FROM categories WHERE code='DM03') t), 10490000, 16, '128GB WiFi / Xám', '📟');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (8, 'SP-1008', 'Samsung Galaxy Tab S9 FE', (SELECT id FROM (SELECT id FROM categories WHERE code='DM03') t), 10490000, 16, '128GB WiFi / Xám', '📟', 'Samsung Galaxy Tab S9 FE có màn hình 10.9 inch, bút S Pen đi kèm và pin dung lượng lớn. Thiết bị giải trí và học tập gọn nhẹ cho cả gia đình.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (8, '128GB WiFi / Xám', 16);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (9, 'SP-1009', 'AirPods Pro 2 (USB-C)', (SELECT id FROM (SELECT id FROM categories WHERE code='DM04') t), 5990000, 60, 'Tiêu chuẩn', '🎧');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (9, 'SP-1009', 'AirPods Pro 2 (USB-C)', (SELECT id FROM (SELECT id FROM categories WHERE code='DM04') t), 5990000, 60, 'Tiêu chuẩn', '🎧', 'AirPods Pro 2 cổng USB-C với chống ồn chủ động, xuyên âm và âm thanh không gian. Hộp sạc hỗ trợ MagSafe, phù hợp sử dụng hằng ngày với iPhone.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (9, 'Tiêu chuẩn', 60);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (10, 'SP-1010', 'Sony WH-1000XM5', (SELECT id FROM (SELECT id FROM categories WHERE code='DM04') t), 7490000, 33, 'Đen; Bạc; Xanh dương', '🎧');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (10, 'SP-1010', 'Sony WH-1000XM5', (SELECT id FROM (SELECT id FROM categories WHERE code='DM04') t), 7490000, 33, 'Đen; Bạc; Xanh dương', '🎧', 'Tai nghe Sony WH-1000XM5 chống ồn hàng đầu, âm thanh chi tiết và thời lượng pin lên đến 30 giờ. Thiết kế êm ái cho làm việc và di chuyển đường dài.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (10, 'Đen', 11);
 INSERT INTO product_variants (product_id, name, stock) VALUES (10, 'Bạc', 11);
 INSERT INTO product_variants (product_id, name, stock) VALUES (10, 'Xanh dương', 11);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (11, 'SP-1011', 'Loa JBL Charge 5', (SELECT id FROM (SELECT id FROM categories WHERE code='DM04') t), 3290000, 40, 'Đen; Xanh; Đỏ', '🔊');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (11, 'SP-1011', 'Loa JBL Charge 5', (SELECT id FROM (SELECT id FROM categories WHERE code='DM04') t), 3290000, 40, 'Đen; Xanh; Đỏ', '🔊', 'Loa Bluetooth JBL Charge 5 âm bass mạnh mẽ, chuẩn chống nước IP67 và pin dùng cả ngày. Có thể sạc dự phòng cho điện thoại khi đi du lịch.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (11, 'Đen', 14);
 INSERT INTO product_variants (product_id, name, stock) VALUES (11, 'Xanh', 14);
 INSERT INTO product_variants (product_id, name, stock) VALUES (11, 'Đỏ', 14);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (12, 'SP-1012', 'Apple Watch Series 9', (SELECT id FROM (SELECT id FROM categories WHERE code='DM05') t), 10990000, 21, '41mm GPS; 45mm GPS; 45mm Cellular', '⌚');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (12, 'SP-1012', 'Apple Watch Series 9', (SELECT id FROM (SELECT id FROM categories WHERE code='DM05') t), 10990000, 21, '41mm GPS; 45mm GPS; 45mm Cellular', '⌚', 'Apple Watch Series 9 theo dõi sức khỏe, luyện tập và kết nối thông báo ngay trên cổ tay. Màn hình sáng, nhiều mặt đồng hồ và hỗ trợ thanh toán tiện lợi.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (12, '41mm GPS', 7);
 INSERT INTO product_variants (product_id, name, stock) VALUES (12, '45mm GPS', 7);
 INSERT INTO product_variants (product_id, name, stock) VALUES (12, '45mm Cellular', 7);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (13, 'SP-1013', 'Garmin Fenix 7 Solar', (SELECT id FROM (SELECT id FROM categories WHERE code='DM05') t), 18500000, 7, '47mm / Đen', '⌚');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (13, 'SP-1013', 'Garmin Fenix 7 Solar', (SELECT id FROM (SELECT id FROM categories WHERE code='DM05') t), 18500000, 7, '47mm / Đen', '⌚', 'Garmin Fenix 7 Solar bền bỉ cho thể thao ngoài trời, sạc năng lượng mặt trời và định vị đa vệ tinh. Theo dõi chuyên sâu cho chạy bộ, leo núi và bơi lội.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (13, '47mm / Đen', 7);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (14, 'SP-1014', 'Chuột Logitech MX Master 3S', (SELECT id FROM (SELECT id FROM categories WHERE code='DM06') t), 2490000, 50, 'Graphite; Pale Grey', '🖱️');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (14, 'SP-1014', 'Chuột Logitech MX Master 3S', (SELECT id FROM (SELECT id FROM categories WHERE code='DM06') t), 2490000, 50, 'Graphite; Pale Grey', '🖱️', 'Chuột không dây Logitech MX Master 3S có cảm biến 8000 DPI, cuộn siêu nhanh và kết nối đa thiết bị. Thiết kế công thái học giảm mỏi tay khi làm việc lâu.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (14, 'Graphite', 25);
 INSERT INTO product_variants (product_id, name, stock) VALUES (14, 'Pale Grey', 25);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (15, 'SP-1015', 'Bàn phím Keychron K2 Pro', (SELECT id FROM (SELECT id FROM categories WHERE code='DM06') t), 2190000, 35, 'RGB / Brown Switch', '⌨️');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (15, 'SP-1015', 'Bàn phím Keychron K2 Pro', (SELECT id FROM (SELECT id FROM categories WHERE code='DM06') t), 2190000, 35, 'RGB / Brown Switch', '⌨️', 'Bàn phím cơ Keychron K2 Pro layout 75 phần trăm, hỗ trợ Bluetooth và có thể thay switch. Gõ êm, phù hợp lập trình và làm việc văn phòng.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (15, 'RGB / Brown Switch', 35);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (16, 'SP-1016', 'Màn hình LG UltraGear 27GQ750', (SELECT id FROM (SELECT id FROM categories WHERE code='DM06') t), 7990000, 14, '27\" 4K 144Hz', '🖥️');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (16, 'SP-1016', 'Màn hình LG UltraGear 27GQ750', (SELECT id FROM (SELECT id FROM categories WHERE code='DM06') t), 7990000, 14, '27\" 4K 144Hz', '🖥️', 'Màn hình gaming LG UltraGear 27 inch độ phân giải 4K, tần số quét 144Hz và thời gian phản hồi thấp. Màu sắc sống động cho chơi game và đồ họa.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (16, '27\" 4K 144Hz', 14);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (17, 'SP-1017', 'Nồi cơm điện Panasonic SR-DF183', (SELECT id FROM (SELECT id FROM categories WHERE code='DM07') t), 1290000, 45, '1.8L', '🍚');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (17, 'SP-1017', 'Nồi cơm điện Panasonic SR-DF183', (SELECT id FROM (SELECT id FROM categories WHERE code='DM07') t), 1290000, 45, '1.8L', '🍚', 'Nồi cơm điện Panasonic dung tích 1.8L, lòng nồi chống dính và nhiều chế độ nấu. Phù hợp gia đình 3 đến 5 người, dễ vệ sinh sau khi dùng.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (17, '1.8L', 45);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (18, 'SP-1018', 'Lò vi sóng Samsung MS23F301', (SELECT id FROM (SELECT id FROM categories WHERE code='DM07') t), 2590000, 22, '23L', '🔥');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (18, 'SP-1018', 'Lò vi sóng Samsung MS23F301', (SELECT id FROM (SELECT id FROM categories WHERE code='DM07') t), 2590000, 22, '23L', '🔥', 'Lò vi sóng Samsung dung tích 23L với nhiều mức công suất, hâm nóng và rã đông nhanh. Thiết kế gọn gàng, phù hợp căn bếp gia đình.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (18, '23L', 22);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (19, 'SP-1019', 'Áo khoác Unifree chống nước', (SELECT id FROM (SELECT id FROM categories WHERE code='DM08') t), 890000, 80, 'S / Đen; M / Đen; L / Xám', '🧥');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (19, 'SP-1019', 'Áo khoác Unifree chống nước', (SELECT id FROM (SELECT id FROM categories WHERE code='DM08') t), 890000, 80, 'S / Đen; M / Đen; L / Xám', '🧥', 'Áo khoác chống nước Unifree chất liệu nhẹ, thoáng khí và có mũ đi kèm. Kiểu dáng trẻ trung, phù hợp mặc khi đi mưa hoặc dạo phố.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (19, 'S / Đen', 27);
 INSERT INTO product_variants (product_id, name, stock) VALUES (19, 'M / Đen', 27);
 INSERT INTO product_variants (product_id, name, stock) VALUES (19, 'L / Xám', 27);
-INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji) VALUES (20, 'SP-1020', 'Giày Nike Air Force 1 \'07', (SELECT id FROM (SELECT id FROM categories WHERE code='DM08') t), 2790000, 3, '40 / Trắng; 41 / Trắng; 42 / Trắng', '👟');
+INSERT INTO products (id, sku, name, category_id, price, stock, variants, emoji, description) VALUES (20, 'SP-1020', 'Giày Nike Air Force 1 \'07', (SELECT id FROM (SELECT id FROM categories WHERE code='DM08') t), 2790000, 3, '40 / Trắng; 41 / Trắng; 42 / Trắng', '👟', 'Giày Nike Air Force 1 07 thiết kế kinh điển, chất liệu da tổng hợp bền đẹp và đế cao su êm ái. Dễ phối đồ cho nhiều phong cách hằng ngày.');
 INSERT INTO product_variants (product_id, name, stock) VALUES (20, '40 / Trắng', 1);
 INSERT INTO product_variants (product_id, name, stock) VALUES (20, '41 / Trắng', 1);
 INSERT INTO product_variants (product_id, name, stock) VALUES (20, '42 / Trắng', 1);

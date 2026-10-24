@@ -110,6 +110,8 @@ if ($method === 'POST') {
     try {
         $total = 0;
         $resolved = [];
+        $locked = [];
+        $qtyByProduct = [];
         foreach ($items as $it) {
             $pid = (int)($it['product_id'] ?? 0);
             $qty = (int)($it['quantity'] ?? 0);
@@ -117,18 +119,19 @@ if ($method === 'POST') {
                 $pdo->rollBack();
                 json_fail('Sản phẩm hoặc số lượng không hợp lệ.', 422);
             }
-            // Khóa dòng sản phẩm để chống tranh hàng cuối
-            $st = $pdo->prepare('SELECT * FROM products WHERE id = ? FOR UPDATE');
-            $st->execute([$pid]);
-            $p = $st->fetch();
-            if (!$p || $p['status'] !== 'active') {
-                $pdo->rollBack();
-                json_fail('Sản phẩm #' . $pid . ' không tồn tại hoặc ngừng bán.', 422);
+            // Khóa dòng sản phẩm để chống tranh hàng cuối (mỗi sản phẩm chỉ khóa một lần)
+            if (!isset($locked[$pid])) {
+                $st = $pdo->prepare('SELECT * FROM products WHERE id = ? FOR UPDATE');
+                $st->execute([$pid]);
+                $p = $st->fetch();
+                if (!$p || $p['status'] !== 'active') {
+                    $pdo->rollBack();
+                    json_fail('Sản phẩm #' . $pid . ' không tồn tại hoặc ngừng bán.', 422);
+                }
+                $locked[$pid] = $p;
             }
-            if ((int)$p['stock'] < $qty) {
-                $pdo->rollBack();
-                json_fail('Sản phẩm “' . $p['name'] . '” chỉ còn ' . (int)$p['stock'] . ' trong kho.', 409);
-            }
+            $p = $locked[$pid];
+            $qtyByProduct[$pid] = ($qtyByProduct[$pid] ?? 0) + $qty;
             $variant = trim((string)($it['variant'] ?? ''));
             $line = (float)$p['price'] * $qty; // giá lấy từ DB
             $total += $line;
@@ -141,6 +144,16 @@ if ($method === 'POST') {
                 'unit_price' => (float)$p['price'],
                 'line_total' => $line,
             ];
+        }
+
+        // Cộng dồn số lượng theo product_id trước khi trừ kho để tránh âm kho
+        // khi khách đặt nhiều dòng cùng một sản phẩm (ví dụ khác biến thể).
+        foreach ($qtyByProduct as $pid => $qtyTotal) {
+            $p = $locked[$pid];
+            if ((int)$p['stock'] < $qtyTotal) {
+                $pdo->rollBack();
+                json_fail('Sản phẩm “' . $p['name'] . '” chỉ còn ' . (int)$p['stock'] . ' trong kho (tổng đặt ' . $qtyTotal . ').', 409);
+            }
         }
 
         $code = next_code($pdo, 'orders', 'order_code', 'DH-');

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chi tiết sản phẩm – OrderFlow</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-topbar" class="topbar"></header>
+      <main class="content">
+        <div id="pItem"></div>
+        <section class="pitem-related-section hidden" id="pRelatedSection">
+          <div class="pitem-related-head">
+            <h2>Sản phẩm liên quan</h2>
+            <a class="muted" href="shop.html">Xem tất cả</a>
+          </div>
+          <div id="pRelated" class="pitem-related"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="assets/js/data.js"></script>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/pages/shop_item.js"></script>
+</body>
+</html>

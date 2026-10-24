@@ -111,6 +111,7 @@
     });
     map["shipments.html"] = ["admin", "staff"];
     map["payments.html"] = ["admin", "staff"];
+    map["shop-item.html"] = ["admin", "staff", "customer"];
     return map;
   }
 
@@ -515,17 +516,46 @@
     return cartRead().reduce((s, it) => s + Math.max(0, Number(it.quantity) || 0), 0);
   }
 
-  function cartAdd(productId, qty, product) {
+  function cartLineKey(productId, variant) {
+    const pid = Number(productId);
+    const v = variant == null ? "" : String(variant).trim();
+    return pid + "|" + v;
+  }
+
+  function resolveCartKey(productId, variant) {
+    if (typeof productId === "string" && productId.indexOf("|") !== -1) return productId;
+    return cartLineKey(productId, variant);
+  }
+
+  function cartAdd(productId, qty, variant, product) {
     const pid = Number(productId);
     if (!pid) return;
+    let variantValue = variant;
+    let snap = product || {};
+    // Tương thích lời gọi cũ add(pid, qty, productSnapshot).
+    if (variantValue && typeof variantValue === "object") {
+      snap = variantValue;
+      variantValue = "";
+    }
+    const variantText = variantValue == null ? "" : String(variantValue).trim();
+    const key = cartLineKey(pid, variantText);
     const addQty = Math.max(1, Number(qty) || 1);
-    const snap = product || {};
-    const stock = Number(snap.stock);
+    let snapStock = Number(snap.stock);
+    // Ưu tiên tồn kho của biến thể đang chọn để giỏ hàng giới hạn đúng.
+    if (variantText && Array.isArray(snap.variant_rows)) {
+      const row = snap.variant_rows.find((v) => String(v.name) === variantText);
+      if (row) {
+        const rowStock = Number(row.stock);
+        if (Number.isFinite(rowStock)) snapStock = Math.max(0, rowStock);
+      }
+    }
+    const stock = snapStock;
     const max = Number.isFinite(stock) && stock > 0 ? stock : Infinity;
     const items = cartRead();
-    const found = items.find((it) => Number(it.product_id) === pid);
+    const found = items.find((it) => cartLineKey(it.product_id, it.variant) === key);
     if (found) {
       found.quantity = Math.min(max, Math.max(1, Number(found.quantity) || 1) + addQty);
+      found.variant = variantText || null;
       if (snap.name) found.name = snap.name;
       if (snap.price != null) found.price = Number(snap.price) || 0;
       if (snap.emoji) found.emoji = snap.emoji;
@@ -533,6 +563,7 @@
     } else {
       items.push({
         product_id: pid,
+        variant: variantText || null,
         quantity: Math.min(max, addQty),
         name: snap.name || "",
         price: Number(snap.price) || 0,
@@ -543,15 +574,15 @@
     cartWrite(items);
   }
 
-  function cartRemove(productId) {
-    const pid = Number(productId);
-    cartWrite(cartRead().filter((it) => Number(it.product_id) !== pid));
+  function cartRemove(productId, variant) {
+    const key = resolveCartKey(productId, variant);
+    cartWrite(cartRead().filter((it) => cartLineKey(it.product_id, it.variant) !== key));
   }
 
-  function cartSetQty(productId, qty) {
-    const pid = Number(productId);
+  function cartSetQty(productId, qty, variant) {
+    const key = resolveCartKey(productId, variant);
     const items = cartRead();
-    const it = items.find((x) => Number(x.product_id) === pid);
+    const it = items.find((x) => cartLineKey(x.product_id, x.variant) === key);
     if (!it) return;
     const stock = Number(it.stock);
     const max = Number.isFinite(stock) && stock > 0 ? stock : Infinity;
@@ -572,6 +603,7 @@
     read: cartRead,
     write: cartWrite,
     count: cartCount,
+    lineKey: cartLineKey,
     add: cartAdd,
     remove: cartRemove,
     setQty: cartSetQty,
