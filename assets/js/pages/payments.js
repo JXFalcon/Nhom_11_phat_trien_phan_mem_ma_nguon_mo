@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – payments.js (Thanh toán mô phỏng)
+   Shopee – payments.js (Thanh toán mô phỏng)
    Giai đoạn 2: API MySQL — server-side idempotency:
    giao dịch đã kết thúc hoặc cùng idempotency_key gửi lại
    không bị đổi trạng thái/số tiền thêm lần nữa.
@@ -44,11 +44,15 @@
 
     tbody.innerHTML = rows.map((p) => {
       const pending = p.status === "cho_xu_ly";
-      const actions = pending && canManage()
-        ? '<button class="btn btn-sm btn-success" data-ok="' + p.id + '" title="Mô phỏng thanh toán thành công">' +
-            OF.icon("check", "icon-sm") + " Thành công</button>" +
-          '<button class="btn btn-sm" data-fail="' + p.id + '" title="Mô phỏng thất bại" style="color:var(--danger)">' +
-            OF.icon("close", "icon-sm") + " Thất bại</button>"
+      const retryable = p.status === "that_bai";
+      const actions = (pending || retryable) && canManage()
+        ? '<button class="btn btn-sm btn-success" data-ok="' + p.id + '" title="' +
+            (retryable ? "Thử lại thanh toán với idempotency key mới" : "Mô phỏng thanh toán thành công") + '">' +
+            OF.icon("check", "icon-sm") + " " + (retryable ? "Thử lại" : "Thành công") + "</button>" +
+          (pending
+            ? '<button class="btn btn-sm" data-fail="' + p.id + '" title="Mô phỏng thất bại" style="color:var(--danger)">' +
+              OF.icon("close", "icon-sm") + " Thất bại</button>"
+            : "")
         : '<button class="btn btn-sm btn-icon" data-info="' + p.id + '" title="' +
             (pending ? "Chờ xử lý" : "Đã kết thúc – gửi lại không đổi thêm") + '">' +
             OF.icon("info", "icon-sm") + "</button>";
@@ -82,13 +86,15 @@
   function simulate(id, result) {
     const p = rowsCache.find((x) => x.id === id);
     if (!p) return;
-    if (p.status !== "cho_xu_ly") {
+    if (p.status === "thanh_cong" || p.status === "hoan_tien") {
       OF.ui.toast("info", "Giao dịch " + p.payment_code + " đã kết thúc (" + OF.PAYMENT_STATUS[p.status].label +
         "). Gửi lại thông báo không làm đổi số lượng/tiền thêm lần nữa.");
       return;
     }
     OF.ui.confirm({
-      title: result === "thanh_cong" ? "Mô phỏng thanh toán thành công?" : "Mô phỏng thanh toán thất bại?",
+      title: p.status === "that_bai"
+        ? "Thử lại thanh toán với key mới?"
+        : (result === "thanh_cong" ? "Mô phỏng thanh toán thành công?" : "Mô phỏng thanh toán thất bại?"),
       message: "Giao dịch " + p.payment_code + " · " + OF.fmt.money(p.amount) + " · đơn " + p.order_code + ".",
       tone: result === "thanh_cong" ? "success" : "danger",
       icon: result === "thanh_cong" ? "check" : "alert",
@@ -103,7 +109,11 @@
       });
       if (!res.success) { OF.ui.toast("error", res.message || "Gửi thông báo thất bại."); return; }
       const d = res.data;
-      if (d.already_settled) {
+      if (d.order_expired) {
+        OF.ui.toast("error",
+          "Giao dịch " + p.payment_code + " → đơn " + p.order_code + " đã hết hạn giữ hàng. Thanh toán đến muộn không kích hoạt đơn và không cấp hàng." +
+          (d.refund_created ? " Đã tạo hoàn tiền " + OF.fmt.money(d.refund_amount) + "." : ""));
+      } else if (d.already_settled) {
         OF.ui.toast("info", "Giao dịch đã ở trạng thái “" + OF.PAYMENT_STATUS[d.status].label + "”, bỏ qua để tránh xử lý trùng.");
       } else {
         OF.ui.toast(result === "thanh_cong" ? "success" : "error",

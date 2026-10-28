@@ -1,6 +1,6 @@
 <?php
 /**
- * OrderFlow – Bootstrap API: PDO, JSON helpers, CORS, CSRF, định tuyến cơ bản.
+ * Shopee – Bootstrap API: PDO, JSON helpers, CORS, CSRF, định tuyến cơ bản.
  * Mọi file API đều require file này.
  */
 declare(strict_types=1);
@@ -42,6 +42,16 @@ header('X-Content-Type-Options: nosniff');
 
 /* ---- Chuyển mọi lỗi chưa bắt được thành JSON, không lộ chi tiết nội bộ ---- */
 set_exception_handler(static function (Throwable $e): void {
+    /* Ghi lỗi ẩn danh ra file để debug (không lộ chi tiết cho client) */
+    $dir = __DIR__ . '/../logs';
+    is_dir($dir) || @mkdir($dir, 0777, true);
+    if (is_dir($dir)) {
+        @file_put_contents(
+            $dir . '/api_errors.log',
+            date('c') . ' | ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL,
+            FILE_APPEND
+        );
+    }
     if (!headers_sent()) {
         http_response_code(500);
         header('Content-Type: application/json; charset=utf-8');
@@ -202,9 +212,21 @@ function is_admin(array $u): bool
 /* ---- Sinh mã định danh ---- */
 function next_code(PDO $pdo, string $table, string $col, string $prefix, int $start = 1): string
 {
-    $offset = strlen($prefix) + 1; // MySQL SUBSTRING 1-based: "DH-" → cắt từ vị trí 4
-    $sql = "SELECT COALESCE(MAX(CAST(SUBSTRING($col, $offset) AS UNSIGNED)), 0) FROM `$table`";
-    $n = (int)$pdo->query($sql)->fetchColumn() + 1;
+    $pdo->prepare('INSERT IGNORE INTO code_sequences (name, value) VALUES (?, 0)')->execute([$table]);
+    $curSt = $pdo->prepare('SELECT value FROM code_sequences WHERE name = ?');
+    $curSt->execute([$table]);
+    $current = (int)$curSt->fetchColumn();
+    if ($current < $start) {
+        $offset = strlen($prefix) + 1;
+        $max = (int)$pdo->query(
+            "SELECT COALESCE(MAX(CAST(SUBSTRING($col, $offset) AS UNSIGNED)), 0) FROM `$table`"
+        )->fetchColumn();
+        $pdo->prepare('UPDATE code_sequences SET value = GREATEST(value, ?) WHERE name = ?')
+            ->execute([$max, $table]);
+    }
+    $pdo->prepare('UPDATE code_sequences SET value = LAST_INSERT_ID(value + 1) WHERE name = ?')
+        ->execute([$table]);
+    $n = (int)$pdo->query('SELECT LAST_INSERT_ID()')->fetchColumn();
     if ($n < $start) {
         $n = $start;
     }

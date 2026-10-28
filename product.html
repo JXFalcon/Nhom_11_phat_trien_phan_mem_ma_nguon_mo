@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopee - Mua sắm trực tuyến</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            shopee: {
+              orange: '#FF4D00',
+              orangeDark: '#E03F00',
+              light: '#FFF6F0',
+              grayBg: '#F5F5F5',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.4s ease-out',
+            'slide-up': 'slideUp 0.3s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #F5F5F5; }
+    .shopee-orange { color: #FF4D00; }
+    .bg-shopee-orange { background-color: #FF4D00; }
+    .hover\:bg-shopee-orange:hover { background-color: #FF4D00; }
+    .border-shopee { border-color: #FF4D00; }
+    .text-shopee { color: #FF4D00; }
+    .carousel-item { transition: transform 0.5s ease; }
+    .product-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ccc; }
+  </style>
+</head>
+<body class="text-gray-900 antialiased">
+
+<!-- ===================== TOP BAR ===================== -->
+  <div class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-8 text-xs text-gray-500">
+        <div class="flex items-center space-x-4 hidden sm:flex">
+          <span class="flex items-center">📦 Giao hàng miễn phí cho đơn trên 200.000đ</span>
+          <span>•</span>
+          <span class="flex items-center">🎁 Nhận mã giảm giá đến 50%</span>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="#" class="hover:text-shopee">Hỗ trợ khách hàng</a>
+          <span>•</span>
+          <div id="accountArea" class="relative"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MAIN HEADER ===================== -->
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-20">
+        <!-- Logo -->
+        <div class="flex-shrink-0 cursor-pointer">
+          <a href="index.html" class="flex items-center gap-2">
+            <div class="bg-shopee-orange text-white p-1.5 rounded-lg">
+              <i class="fa-solid fa-bag-shopping text-lg"></i>
+            </div>
+            <span class="font-bold text-xl tracking-tight text-shopee">SHOPEE<span class="text-gray-900">.vn</span></span>
+          </a>
+        </div>
+
+        <!-- Search -->
+        <div class="hidden md:flex-1 max-w-2xl mx-10">
+          <div class="relative">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm, thương hiệu..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-shopee focus:border-transparent transition-all text-sm" />
+            <button class="absolute left-3 top-2.5 text-gray-400 hover:text-shopee"><i class="fa-solid fa-search"></i></button>
+          </div>
+          <div class="mt-1 flex gap-2 overflow-x-auto pb-1 custom-scrollbar" id="searchSuggestions">
+            <span class="whitespace-nowrap bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-600">Đang tải gợi ý...</span>
+          </div>
+        </div>
+
+        <!-- Cart & User -->
+        <div class="flex items-center gap-4 md:gap-6">
+          <div class="relative cursor-pointer group" id="cartBtn">
+            <a href="cart.html" class="relative p-2 text-gray-600 hover:text-shopee transition">
+              <i class="fa-solid fa-cart-shopping text-xl"></i>
+              <span id="cartBadge" class="absolute -top-1 -right-1 bg-shopee-orange text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform">0</span>
+            </a>
+          </div>
+          <a href="dashboard.html" id="btnAdminEntry" class="bg-shopee-orange text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-shopee-orangeDark transition shadow-md">Quản trị hệ thống</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== PRODUCT DETAIL ===================== -->
+  <section class="py-6 bg-gray-50 min-h-[60vh]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav class="text-xs text-gray-500 mb-4" id="breadcrumb">
+        <a href="index.html" class="hover:text-shopee">Shopee</a>
+        <span class="mx-1">&gt;</span>
+        <a href="shop.html" class="hover:text-shopee" id="crumbCategory">Danh mục</a>
+        <span class="mx-1">&gt;</span>
+        <span class="text-gray-400 truncate inline-block max-w-[300px] align-middle" id="crumbName">Sản phẩm</span>
+      </nav>
+
+      <div class="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Media -->
+          <div>
+            <div class="aspect-square rounded-lg bg-shopee-light border border-gray-100 flex items-center justify-center overflow-hidden">
+              <img id="pMainImage" class="hidden h-full w-full object-contain p-3" alt="" />
+              <span id="pEmoji" class="text-[140px]">📦</span>
+            </div>
+            <div class="flex gap-2 mt-3" id="pThumbs"></div>
+          </div>
+
+          <!-- Info -->
+          <div>
+            <h1 id="pTitle" class="text-lg font-semibold text-gray-900 leading-snug">Đang tải sản phẩm...</h1>
+            <div class="flex items-center gap-4 mt-2 text-xs">
+              <span class="text-gray-400">Đã bán <span id="pSold" class="text-gray-600 !font-medium">—</span></span>
+              <span class="text-gray-200">|</span>
+              <a href="#" class="text-gray-400 hover:text-shopee">Tố cáo</a>
+            </div>
+
+            <div class="bg-shopee-light/60 -mx-6 px-6 py-4 my-4 border-y border-gray-100">
+              <div class="flex items-baseline gap-3">
+                <span class="text-xs text-gray-400">Giá bán</span>
+                <span id="pPrice" class="text-3xl font-bold text-shopee">…₫</span>
+              </div>
+            </div>
+
+            <div id="pVariantBlock" class="mb-5">
+              <label class="block text-sm text-gray-500 mb-2">Phân loại</label>
+              <div id="pVariants" class="flex flex-wrap gap-2"></div>
+            </div>
+
+            <div class="mb-5">
+              <label class="block text-sm text-gray-500 mb-2">Số lượng</label>
+              <div class="flex items-center gap-4">
+                <div class="flex items-center border border-gray-300 rounded-md overflow-hidden">
+                  <button id="qtyMinus" class="w-9 h-9 text-gray-500 hover:bg-gray-100 disabled:opacity-40">−</button>
+                  <input id="qtyInput" value="1" inputmode="numeric" class="w-12 h-9 text-center text-sm focus:outline-none" />
+                  <button id="qtyPlus" class="w-9 h-9 text-gray-500 hover:bg-gray-100">+</button>
+                </div>
+                <span class="text-xs text-gray-400" id="pStockNote"></span>
+              </div>
+            </div>
+
+            <div class="flex gap-3">
+              <button id="btnAddCart" class="flex-1 border border-shopee text-shopee bg-shopee-light/40 py-3 rounded-md font-semibold text-sm hover:bg-shopee-light transition flex items-center justify-center gap-2 disabled:opacity-50">
+                <i class="fa-solid fa-cart-plus"></i> Thêm Vào Giỏ Hàng
+              </button>
+              <button id="btnBuyNow" class="flex-1 bg-shopee-orange text-white py-3 rounded-md font-semibold text-sm hover:bg-shopee-orangeDark transition flex items-center justify-center gap-2 disabled:opacity-50">
+                Mua Ngay
+              </button>
+            </div>
+            <p id="pError" class="hidden mt-2 text-xs text-red-500"></p>
+
+            <div class="mt-6 border-t border-gray-100 pt-4 grid gap-3 text-sm">
+              <div class="flex gap-3">
+                <span class="text-gray-400 w-24 flex-none">Vận chuyển</span>
+                <span class="text-gray-700"><i class="fa-solid fa-truck-fast text-shopee mr-1"></i> Giao Hàng Nhanh — Freeship cho đơn trên 200.000₫</span>
+              </div>
+              <div class="flex gap-3">
+                <span class="text-gray-400 w-24 flex-none">An Tâm</span>
+                <span class="text-gray-700"><i class="fa-solid fa-shield-halved text-shopee mr-1"></i> Bảo hiểm bảo vệ người tiêu dùng · Đổi trả trong 7 ngày</span>
+              </div>
+              <div class="flex gap-3">
+                <span class="text-gray-400 w-24 flex-none">Tồn kho</span>
+                <span class="text-gray-700" id="pStockLine">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+        <h2 class="text-lg font-bold mb-4">Chi tiết sản phẩm</h2>
+        <div id="pSpecs" class="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-3 text-sm"></div>
+      </div>
+
+      <div class="mt-6 bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+        <h2 class="text-lg font-bold mb-4">Mô tả sản phẩm</h2>
+        <div id="pDescription" class="text-sm leading-7 text-gray-700 whitespace-pre-line"></div>
+      </div>
+
+      <section id="reviewsSection" class="mt-6 bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
+        <h2 class="text-lg font-bold mb-5">Đánh giá sản phẩm</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:border-r lg:border-gray-100 lg:pr-6">
+            <div class="flex items-end gap-3">
+              <span id="reviewAvg" class="text-4xl font-bold text-shopee">0</span>
+              <div class="pb-1">
+                <div id="reviewAvgStars" class="text-sm"></div>
+                <div id="reviewTotal" class="text-xs text-gray-400 mt-1">0 đánh giá</div>
+              </div>
+            </div>
+            <div id="reviewHistogram" class="mt-4 space-y-1.5"></div>
+            <div id="reviewSummaryMeta" class="mt-4 text-xs text-gray-500"></div>
+          </div>
+          <div class="lg:col-span-2">
+            <div id="reviewFilters" class="flex flex-wrap gap-2 mb-3">
+              <button type="button" class="review-filter px-3 py-1.5 rounded border text-xs" data-filter="all">Tất cả</button>
+              <button type="button" class="review-filter px-3 py-1.5 rounded border text-xs" data-filter="5">5 sao</button>
+              <button type="button" class="review-filter px-3 py-1.5 rounded border text-xs" data-filter="4">4 sao</button>
+              <button type="button" class="review-filter px-3 py-1.5 rounded border text-xs" data-filter="3">3 sao</button>
+              <button type="button" class="review-filter px-3 py-1.5 rounded border text-xs" data-filter="2">2 sao</button>
+              <button type="button" class="review-filter px-3 py-1.5 rounded border text-xs" data-filter="1">1 sao</button>
+              <button type="button" class="review-filter px-3 py-1.5 rounded border text-xs" data-filter="images">Có hình ảnh</button>
+              <button type="button" class="review-filter px-3 py-1.5 rounded border text-xs" data-filter="comments">Có bình luận</button>
+            </div>
+            <div class="flex justify-end gap-2 mb-3 text-xs">
+              <button type="button" class="review-sort px-3 py-1.5 rounded border" data-sort="newest">Mới nhất</button>
+              <button type="button" class="review-sort px-3 py-1.5 rounded border" data-sort="helpful">Hữu ích</button>
+            </div>
+            <div id="reviewList" class="divide-y divide-gray-100"></div>
+            <div id="reviewPager" class="mt-5 flex items-center justify-between text-xs text-gray-500"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="mt-8">
+        <h2 class="text-lg font-bold mb-4">Sản phẩm cùng danh mục</h2>
+        <div id="relatedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"></div>
+      </div>
+    </div>
+  </section>
+
+<footer class="bg-white border-t border-gray-200 py-10 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="bg-shopee-orange text-white p-1.5 rounded-lg"><i class="fa-solid fa-bag-shopping"></i></div>
+            <span class="font-bold text-lg tracking-tight text-shopee">SHOPEE<span class="text-gray-900">.vn</span></span>
+          </div>
+          <p class="text-sm text-gray-600 max-w-xs">Nền tảng thương mại điện tử hàng đầu Việt Nam, kết nối hàng triệu người mua và người bán.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm uppercase tracking-wider text-gray-700 mb-4">Chăm sóc khách hàng</h4>
+          <ul class="space-y-2 text-sm text-gray-600">
+            <li><a href="#" class="hover:text-shopee">Trung tâm trợ giúp</a></li>
+            <li><a href="#" class="hover:text-shopee">Hướng dẫn mua hàng</a></li>
+            <li><a href="#" class="hover:text-shopee">Chính sách đổi trả</a></li>
+            <li><a href="#" class="hover:text-shopee">Liên hệ người bán</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm uppercase tracking-wider text-gray-700 mb-4">Về chúng tôi</h4>
+          <ul class="space-y-2 text-sm text-gray-600">
+            <li><a href="#" class="hover:text-shopee">Giới thiệu Shopee</a></li>
+            <li><a href="#" class="hover:text-shopee">Tuyển dụng</a></li>
+            <li><a href="#" class="hover:text-shopee">Điều khoản sử dụng</a></li>
+            <li><a href="#" class="hover:text-shopee">Chính sách bảo mật</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm uppercase tracking-wider text-gray-700 mb-4">Tải ứng dụng</h4>
+          <div class="flex gap-2">
+            <a href="#" class="flex-1 bg-gray-100 rounded-lg p-3 text-center text-xs font-semibold text-gray-700 hover:bg-shopee hover:text-white transition">App Store</a>
+            <a href="#" class="flex-1 bg-gray-100 rounded-lg p-3 text-center text-xs font-semibold text-gray-700 hover:bg-shopee hover:text-white transition">Google Play</a>
+          </div>
+          <div class="mt-4 flex gap-3">
+            <a href="#" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:text-shopee transition"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:text-shopee transition"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="#" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:text-shopee transition"><i class="fa-brands fa-instagram"></i></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+        <div class="flex gap-4 text-xs">
+          <span>© 2024 Shopee.vn</span>
+          <span>•</span>
+          <span>Công ty Cổ phần Shopee Việt Nam</span>
+        </div>
+        <div class="flex gap-6 text-xs">
+          <img src="https://via.placeholder.com/40x24/1A237E/FFFFFF?text=MoMo" alt="MoMo" class="h-5" />
+          <img src="https://via.placeholder.com/40x24/FF3E00/FFFFFF?text=ZaloPay" alt="ZaloPay" class="h-5" />
+          <img src="https://via.placeholder.com/40x24/0052CC/FFFFFF?text=VISA" alt="VISA" class="h-5" />
+          <img src="https://via.placeholder.com/40x24/FB3E02/FFFFFF?text=MasterCard" alt="MasterCard" class="h-5" />
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/data.js?v=3"></script>
+  <script src="assets/js/api.js?v=3"></script>
+  <script>
+    (function () {
+      const OF = window.OF;
+      const params = new URLSearchParams(location.search);
+      const id = Number(params.get('id') || 0);
+      let product = null;
+      let selectedVariantId = null;
+      let selectedVariant = '';
+      let qty = 1;
+
+      function currentVariant() {
+        if (!product || !product.variant_rows) return null;
+        return product.variant_rows.find(v => Number(v.id) === Number(selectedVariantId)) || null;
+      }
+      function currentStock() {
+        const v = currentVariant();
+        return Number(v ? v.stock : (product ? product.stock : 0));
+      }
+      function currentPrice() {
+        const v = currentVariant();
+        return Number(v && v.price != null ? v.price : (product ? product.price : 0));
+      }
+
+      function toast(msg, ok) {
+        const el = document.getElementById('pError');
+        el.textContent = msg;
+        el.classList.remove('hidden');
+        el.className = ok ? 'mt-2 text-xs text-green-600' : 'mt-2 text-xs text-red-500';
+        setTimeout(() => { el.classList.add('hidden'); }, 2600);
+      }
+
+      function updateQtyUI() {
+        const stock = currentStock();
+        const max = Math.max(1, stock);
+        if (qty > max) qty = max;
+        document.getElementById('qtyInput').value = qty;
+        document.getElementById('qtyMinus').disabled = qty <= 1;
+        document.getElementById('qtyPlus').disabled = qty >= max || stock <= 0;
+        const note = document.getElementById('pStockNote');
+        note.textContent = product ? ('Còn ' + stock + ' sản phẩm có sẵn') : '';
+        document.getElementById('pPrice').textContent = product ? (currentPrice().toLocaleString('vi-VN') + '₫') : '…₫';
+        const stockLine = document.getElementById('pStockLine');
+        if (stockLine && product) stockLine.textContent = stock > 0 ? (stock + ' sản phẩm trong kho') : 'Hết hàng';
+        const out = stock <= 0;
+        document.getElementById('btnAddCart').disabled = out;
+        document.getElementById('btnBuyNow').disabled = out;
+      }
+
+      function selectVariant(vid, name) {
+        selectedVariantId = vid;
+        selectedVariant = name || '';
+        document.querySelectorAll('[data-variant]').forEach(b => {
+          const on = Number(b.getAttribute('data-vid')) === Number(vid);
+          b.className = 'px-3 py-2 rounded border text-xs ' + (on ? 'border-shopee text-shopee bg-shopee-light font-medium' : 'border-gray-300 text-gray-600 hover:border-shopee');
+        });
+        updateQtyUI();
+      }
+
+      function renderVariants() {
+        const wrap = document.getElementById('pVariants');
+        const rows = product.variant_rows || [];
+        if (!rows.length) {
+          document.getElementById('pVariantBlock').style.display = 'none';
+          selectedVariantId = null;
+          selectedVariant = '';
+          return;
+        }
+        document.getElementById('pVariantBlock').style.display = '';
+        wrap.innerHTML = rows.map(v => {
+          const price = Number(v.price != null ? v.price : product.price);
+          return '<button data-vid="' + v.id + '" data-variant="' + OF.escapeHtml(v.name) + '" class="px-3 py-2 rounded border text-xs border-gray-300 text-gray-600 hover:border-shopee' + (Number(v.stock) <= 0 ? ' opacity-50' : '') + '">' +
+            OF.escapeHtml(v.name) + ' · ' + price.toLocaleString('vi-VN') + '₫' + (Number(v.stock) <= 0 ? ' (hết)' : '') + '</button>';
+        }).join('');
+        wrap.querySelectorAll('[data-variant]').forEach(btn => {
+          btn.addEventListener('click', () => selectVariant(btn.getAttribute('data-vid'), btn.getAttribute('data-variant')));
+        });
+        const first = rows.find(v => Number(v.stock) > 0) || rows[0];
+        selectVariant(first.id, first.name);
+      }
+
+      function bindQty() {
+        document.getElementById('qtyMinus').addEventListener('click', () => { if (qty > 1) { qty--; updateQtyUI(); } });
+        document.getElementById('qtyPlus').addEventListener('click', () => { const max = Math.max(1, currentStock()); if (qty < max) { qty++; updateQtyUI(); } });
+        document.getElementById('qtyInput').addEventListener('input', (e) => {
+          const v = Math.max(1, Math.min(Math.max(1, currentStock()), Number(e.target.value) || 1));
+          qty = v;
+        });
+      }
+
+      function hardcodedHeader(user) {
+        const area = document.getElementById('accountArea');
+        const entry = document.getElementById('btnAdminEntry');
+        if (entry) {
+          const role = user ? user.role : '';
+          entry.href = !user ? 'login.html' : (role === 'admin' || role === 'staff') ? 'dashboard.html' : 'orders.html';
+        }
+        if (!user) {
+          area.innerHTML = '<a href="register.html" class="hover:text-shopee">Đăng ký</a><span class="mx-2">/</span><a href="login.html" class="text-shopee font-semibold">Đăng nhập</a>';
+        } else {
+          const fullName = user.full_name || '';
+          const initial = fullName.trim().charAt(0).toUpperCase() || '?';
+          area.innerHTML = '<span class="w-6 h-6 rounded-full bg-shopee-orange text-white text-xs font-bold flex items-center justify-center">' + OF.escapeHtml(initial) + '</span><span class="font-medium">Xin chào, ' + OF.escapeHtml(fullName) + '</span>';
+        }
+      }
+
+      async function refreshCartBadge() {
+        if (!OF.session.getToken()) return;
+        const res = await OF.api.get('carts/index.php');
+        if (res.success && Number(res.data.item_count) > 0) {
+          const cb = document.getElementById('cartBadge');
+          cb.textContent = res.data.item_count;
+          cb.classList.remove('scale-0'); cb.classList.add('scale-100');
+        }
+      }
+
+      async function addToCart(goCart) {
+        if (!product) return;
+        const stock = currentStock();
+        if (stock <= 0) { toast('Sản phẩm đã hết hàng.'); return; }
+        if (product.variant_rows && product.variant_rows.length && !selectedVariantId) {
+          toast('Vui lòng chọn biến thể.');
+          return;
+        }
+        if (!OF.session.getToken()) {
+          toast('Vui lòng đăng nhập để mua sắm!');
+          setTimeout(() => { location.href = 'login.html'; }, 700);
+          return;
+        }
+        const body = { product_id: product.id, quantity: qty };
+        if (selectedVariantId) {
+          body.variant_id = selectedVariantId;
+          body.variant = selectedVariant;
+        }
+        const res = await OF.api.post('carts/index.php', body);
+        if (!res.success) { toast(res.message || 'Không thêm được vào giỏ hàng!'); return; }
+        toast('Đã thêm vào giỏ hàng!', true);
+        refreshCartBadge();
+        if (goCart) setTimeout(() => { location.href = 'cart.html'; }, 600);
+      }
+
+      function renderGallery() {
+        const main = document.getElementById('pMainImage');
+        const emoji = document.getElementById('pEmoji');
+        const thumbs = document.getElementById('pThumbs');
+        const images = Array.isArray(product.images) ? product.images.filter(Boolean) : [];
+
+        if (!images.length) {
+          main.classList.add('hidden');
+          main.removeAttribute('src');
+          emoji.classList.remove('hidden');
+          thumbs.innerHTML = [0, 1, 2, 3].map(() =>
+            '<div class="w-16 h-16 rounded border border-gray-200 bg-shopee-light flex items-center justify-center"><span class="text-2xl">' + OF.escapeHtml(product.emoji || '📦') + '</span></div>'
+          ).join('');
+          return;
+        }
+
+        function showImage(url) {
+          main.onload = function () {
+            main.classList.remove('hidden');
+            emoji.classList.add('hidden');
+          };
+          main.onerror = function () {
+            main.classList.add('hidden');
+            emoji.classList.remove('hidden');
+          };
+          main.src = url;
+        }
+
+        thumbs.innerHTML = images.map((src, i) =>
+          '<button type="button" class="w-16 h-16 rounded border ' + (i === 0 ? 'border-shopee' : 'border-gray-200') + ' bg-white overflow-hidden p-1" data-gallery-src="' + OF.escapeHtml(src) + '" title="Ảnh ' + (i + 1) + '">' +
+            '<img src="' + OF.escapeHtml(src) + '" alt="' + OF.escapeHtml(product.name + ' - ảnh ' + (i + 1)) + '" class="w-full h-full object-contain" loading="lazy" />' +
+          '</button>'
+        ).join('');
+
+        const buttons = Array.from(thumbs.querySelectorAll('[data-gallery-src]'));
+        buttons.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            buttons.forEach(function (b) {
+              b.classList.remove('border-shopee');
+              b.classList.add('border-gray-200');
+            });
+            btn.classList.add('border-shopee');
+            btn.classList.remove('border-gray-200');
+            showImage(btn.getAttribute('data-gallery-src'));
+          });
+        });
+        showImage(images[0]);
+      }
+
+      function starsHtml(rating, average) {
+        let html = '';
+        for (let i = 1; i <= 5; i++) {
+          if (average != null) {
+            if (rating >= i) html += '<i class="fa-solid fa-star text-shopee"></i>';
+            else if (rating >= i - 0.5) html += '<i class="fa-solid fa-star-half-stroke text-shopee"></i>';
+            else html += '<i class="fa-regular fa-star text-gray-300"></i>';
+          } else {
+            html += '<i class="' + (i <= rating ? 'fa-solid fa-star text-shopee' : 'fa-regular fa-star text-gray-300') + '"></i>';
+          }
+        }
+        return html;
+      }
+
+      function formatReviewDate(value) {
+        const d = new Date(String(value || '').replace(' ', 'T'));
+        return isNaN(d.getTime()) ? String(value || '') : d.toLocaleDateString('vi-VN');
+      }
+
+      function renderProductContent() {
+        const specsBox = document.getElementById('pSpecs');
+        const descBox = document.getElementById('pDescription');
+        const lines = String(product.specs || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        const rows = lines.map(line => {
+          const idx = line.indexOf(':');
+          return idx > 0
+            ? { label: line.slice(0, idx).trim(), value: line.slice(idx + 1).trim() }
+            : { label: 'Thông tin', value: line };
+        }).filter(r => r.value);
+        specsBox.innerHTML = rows.length
+          ? rows.map(r => '<div class="flex gap-3 border-b border-gray-50 pb-2"><span class="w-36 flex-none text-gray-400">' + OF.escapeHtml(r.label) + '</span><span class="text-gray-700">' + OF.escapeHtml(r.value) + '</span></div>').join('')
+          : '<p class="text-sm text-gray-400">Đang cập nhật chi tiết sản phẩm.</p>';
+        descBox.textContent = String(product.description || '').trim() || 'Đang cập nhật mô tả sản phẩm.';
+      }
+
+      const reviewState = { page: 1, perPage: 5, rating: 0, hasImage: false, hasComment: false, sort: 'newest' };
+
+      function renderReviewSummary(summary) {
+        if (!summary) return;
+        const total = Number(summary.total) || 0;
+        const avg = Number(summary.average) || 0;
+        document.getElementById('reviewAvg').textContent = avg ? avg.toFixed(1) : '0';
+        document.getElementById('reviewAvgStars').innerHTML = starsHtml(avg, true);
+        document.getElementById('reviewTotal').textContent = total + ' đánh giá';
+        const counts = summary.counts || {};
+        document.getElementById('reviewHistogram').innerHTML = [5, 4, 3, 2, 1].map(star => {
+          const count = Number(counts[star]) || 0;
+          const pct = total ? Math.round(count / total * 100) : 0;
+          return '<div class="flex items-center gap-2 text-xs text-gray-500">' +
+            '<span class="w-3 text-right">' + star + '</span>' +
+            '<i class="fa-solid fa-star text-[10px] text-gray-300"></i>' +
+            '<div class="flex-1 h-2 rounded-full bg-gray-100 overflow-hidden"><div class="h-full rounded-full bg-shopee-orange" style="width:' + pct + '%"></div></div>' +
+            '<span class="w-8 text-right">' + count + '</span></div>';
+        }).join('');
+        const images = Number(summary.with_images) || 0;
+        const comments = Number(summary.with_comments) || 0;
+        document.getElementById('reviewSummaryMeta').textContent = images + ' đánh giá có hình ảnh · ' + comments + ' đánh giá có bình luận';
+      }
+
+      function updateReviewFilterStyles() {
+        document.querySelectorAll('.review-filter').forEach(btn => {
+          const f = btn.getAttribute('data-filter');
+          const active = f === 'all'
+            ? (!reviewState.rating && !reviewState.hasImage && !reviewState.hasComment)
+            : f === 'images'
+              ? reviewState.hasImage
+              : f === 'comments'
+                ? reviewState.hasComment
+                : Number(f) === reviewState.rating;
+          btn.className = 'review-filter px-3 py-1.5 rounded border text-xs ' +
+            (active ? 'border-shopee text-shopee bg-shopee-light font-medium' : 'border-gray-300 text-gray-600 hover:border-shopee');
+        });
+        document.querySelectorAll('.review-sort').forEach(btn => {
+          const active = btn.getAttribute('data-sort') === reviewState.sort;
+          btn.className = 'review-sort px-3 py-1.5 rounded border ' +
+            (active ? 'border-shopee text-shopee bg-shopee-light font-medium' : 'border-gray-300 text-gray-600 hover:border-shopee');
+        });
+      }
+
+      function renderReviewItems(data) {
+        const list = document.getElementById('reviewList');
+        const items = data.items || [];
+        if (!items.length) {
+          list.innerHTML = '<p class="py-8 text-center text-sm text-gray-400">Chưa có đánh giá phù hợp với bộ lọc.</p>';
+          return;
+        }
+        list.innerHTML = items.map(r => {
+          const initial = String(r.reviewer_name || '?').trim().charAt(0).toUpperCase() || '?';
+          const variant = r.variant
+            ? '<span class="text-[11px] text-gray-400">Phân loại: ' + OF.escapeHtml(r.variant) + '</span>'
+            : '';
+          const comment = r.comment
+            ? '<p class="mt-2 text-sm leading-6 text-gray-700 whitespace-pre-line">' + OF.escapeHtml(r.comment) + '</p>'
+            : '';
+          const images = (r.images || []).map(url =>
+            '<a href="' + OF.escapeHtml(url) + '" target="_blank" rel="noopener" class="block w-16 h-16 rounded border border-gray-200 overflow-hidden">' +
+              '<img src="' + OF.escapeHtml(url) + '" alt="Ảnh đánh giá" class="w-full h-full object-cover" loading="lazy" onerror="this.parentElement.style.display=\'none\'" /></a>'
+          ).join('');
+          return '<article class="py-5 first:pt-0">' +
+            '<div class="flex items-start gap-3">' +
+              '<span class="w-9 h-9 flex-none rounded-full bg-shopee-light text-shopee font-semibold flex items-center justify-center">' + OF.escapeHtml(initial) + '</span>' +
+              '<div class="min-w-0 flex-1">' +
+                '<div class="flex flex-wrap items-center gap-x-3 gap-y-1">' +
+                  '<span class="text-sm font-medium text-gray-800">' + OF.escapeHtml(r.reviewer_name || 'Người mua') + '</span>' +
+                  '<span class="text-xs">' + starsHtml(Number(r.rating) || 0) + '</span>' +
+                  '<span class="text-[11px] text-gray-400">' + formatReviewDate(r.created_at) + '</span>' +
+                '</div>' +
+                variant +
+                comment +
+                (images ? '<div class="flex flex-wrap gap-2 mt-3">' + images + '</div>' : '') +
+                '<div class="mt-2 text-[11px] text-gray-400"><i class="fa-regular fa-thumbs-up mr-1"></i>Hữu ích (' + (Number(r.helpful_count) || 0) + ')</div>' +
+              '</div>' +
+            '</div></article>';
+        }).join('');
+      }
+
+      function renderReviewPager(data) {
+        const pager = document.getElementById('reviewPager');
+        const pages = Math.max(1, Math.ceil((Number(data.total) || 0) / reviewState.perPage));
+        pager.innerHTML = '<span>Trang ' + reviewState.page + ' / ' + pages + '</span>' +
+          '<span class="flex gap-2">' +
+            '<button type="button" id="reviewPrev" class="px-3 py-1.5 rounded border ' + (reviewState.page <= 1 ? 'border-gray-200 text-gray-300' : 'border-gray-300 text-gray-600 hover:border-shopee') + '"' + (reviewState.page <= 1 ? ' disabled' : '') + '>Trước</button>' +
+            '<button type="button" id="reviewNext" class="px-3 py-1.5 rounded border ' + (reviewState.page >= pages ? 'border-gray-200 text-gray-300' : 'border-gray-300 text-gray-600 hover:border-shopee') + '"' + (reviewState.page >= pages ? ' disabled' : '') + '>Sau</button>' +
+          '</span>';
+        const prev = document.getElementById('reviewPrev');
+        const next = document.getElementById('reviewNext');
+        if (prev) prev.addEventListener('click', () => { if (reviewState.page > 1) { reviewState.page--; loadReviews(); } });
+        if (next) next.addEventListener('click', () => { if (reviewState.page < pages) { reviewState.page++; loadReviews(); } });
+      }
+
+      async function loadReviews() {
+        const list = document.getElementById('reviewList');
+        list.innerHTML = '<p class="py-8 text-center text-sm text-gray-400">Đang tải đánh giá...</p>';
+        const q = new URLSearchParams({
+          product_id: String(id),
+          page: String(reviewState.page),
+          per_page: String(reviewState.perPage),
+          sort: reviewState.sort,
+        });
+        if (reviewState.rating) q.set('rating', String(reviewState.rating));
+        if (reviewState.hasImage) q.set('has_image', '1');
+        if (reviewState.hasComment) q.set('has_comment', '1');
+        const res = await OF.api.get('reviews/index.php', q.toString());
+        if (!res.success) {
+          list.innerHTML = '<p class="py-8 text-center text-sm text-gray-400">' + OF.escapeHtml(res.message || 'Không tải được đánh giá.') + '</p>';
+          document.getElementById('reviewPager').innerHTML = '';
+          return;
+        }
+        renderReviewSummary(res.data.summary);
+        renderReviewItems(res.data);
+        renderReviewPager(res.data);
+      }
+
+      function bindReviewControls() {
+        document.querySelectorAll('.review-filter').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const f = btn.getAttribute('data-filter');
+            if (f === 'all') {
+              reviewState.rating = 0;
+              reviewState.hasImage = false;
+              reviewState.hasComment = false;
+            } else if (f === 'images') {
+              reviewState.hasImage = !reviewState.hasImage;
+            } else if (f === 'comments') {
+              reviewState.hasComment = !reviewState.hasComment;
+            } else {
+              reviewState.rating = Number(f) || 0;
+            }
+            reviewState.page = 1;
+            updateReviewFilterStyles();
+            loadReviews();
+          });
+        });
+        document.querySelectorAll('.review-sort').forEach(btn => {
+          btn.addEventListener('click', () => {
+            reviewState.sort = btn.getAttribute('data-sort') === 'helpful' ? 'helpful' : 'newest';
+            reviewState.page = 1;
+            updateReviewFilterStyles();
+            loadReviews();
+          });
+        });
+        updateReviewFilterStyles();
+      }
+
+      function renderRelated(items) {
+        const grid = document.getElementById('relatedGrid');
+        const list = items.filter(p => p.id !== id).slice(0, 5);
+        if (!list.length) { grid.innerHTML = '<p class="col-span-full text-sm text-gray-400">Chưa có sản phẩm khác trong danh mục này.</p>'; return; }
+        grid.innerHTML = list.map(p => `
+          <div class="bg-white rounded-xl border border-gray-100 overflow-hidden cursor-pointer group" onclick="location.href='product.html?id=${p.id}'">
+            <div class="h-32 bg-shopee-light flex items-center justify-center overflow-hidden">${p.cover_image
+              ? `<img src="${OF.escapeHtml(p.cover_image)}" alt="${OF.escapeHtml(p.name)}" class="h-full w-full object-contain p-1" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')" /><span class="text-5xl hidden">${OF.escapeHtml(p.emoji || '📦')}</span>`
+              : `<span class="text-5xl">${OF.escapeHtml(p.emoji || '📦')}</span>`}</div>
+            <div class="p-2">
+              <h3 class="text-xs font-medium text-gray-900 line-clamp-2 mb-1">${OF.escapeHtml(p.name)}</h3>
+              <span class="text-sm font-bold text-shopee">${Number(p.price).toLocaleString()}₫</span>
+            </div>
+          </div>`).join('');
+      }
+
+      document.addEventListener('DOMContentLoaded', async function () {
+        document.getElementById('btnAddCart').addEventListener('click', () => addToCart(false));
+        document.getElementById('btnBuyNow').addEventListener('click', () => addToCart(true));
+
+        const user = OF.session.getUser();
+        hardcodedHeader(user);
+        bindReviewControls();
+        refreshCartBadge();
+
+        if (!id) { document.getElementById('pTitle').textContent = 'Không tìm thấy sản phẩm (thiếu id).'; return; }
+        const res = await OF.api.get('products/item.php', 'id=' + id + '&public=1');
+        if (!res.success) {
+          document.getElementById('pTitle').textContent = 'Không tìm thấy sản phẩm.';
+          document.getElementById('btnAddCart').disabled = true;
+          document.getElementById('btnBuyNow').disabled = true;
+          return;
+        }
+        product = res.data;
+        document.getElementById('pTitle').textContent = product.name;
+        document.getElementById('pEmoji').textContent = product.emoji || '📦';
+        document.getElementById('pPrice').textContent = Number(product.price).toLocaleString('vi-VN') + '₫';
+        document.getElementById('pSold').textContent = (100 + (product.id * 137) % 900) + '+';
+        document.getElementById('pStockLine').textContent = product.stock > 0 ? (product.stock + ' sản phẩm trong kho') : 'Hết hàng';
+        document.getElementById('crumbName').textContent = product.name;
+        document.title = product.name + ' – Shopee.vn';
+        const catLink = document.getElementById('crumbCategory');
+        if (product.category_id && product.category_name) {
+          catLink.textContent = product.category_name;
+          catLink.href = 'shop.html?category_id=' + product.category_id;
+        }
+        bindQty();
+        renderVariants();
+        updateQtyUI();
+        renderGallery();
+        renderProductContent();
+        if (product.review_summary) renderReviewSummary(product.review_summary);
+        loadReviews();
+
+        if (product.category_id) {
+          const rel = await OF.api.get('products/index.php', 'per_page=200&status=active&public=1&category_id=' + product.category_id);
+          if (rel.success) renderRelated(rel.data.items || []);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -6,17 +6,26 @@
  */
 declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/order_lifecycle.php';
+require_once __DIR__ . '/../../includes/product_images.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $pdo = db();
 
 if ($method === 'GET') {
-    require_auth();
+    // Storefront (index.html) gọi với ?public=1: chỉ xem các sản phẩm active, không cần đăng nhập.
+    $isPublic = isset($_GET['public']);
+    if (!$isPublic) {
+        require_auth();
+    }
     $q = trim((string)($_GET['q'] ?? ''));
     $cat = (int)($_GET['category_id'] ?? 0);
     $status = (string)($_GET['status'] ?? '');
+    if ($isPublic && $status !== 'active') {
+        $status = 'active';
+    }
     $page = max(1, (int)($_GET['page'] ?? 1));
-    $perPage = min(50, max(1, (int)($_GET['per_page'] ?? 50)));
+    $perPage = min(200, max(1, (int)($_GET['per_page'] ?? 50)));
 
     $where = [];
     $params = [];
@@ -48,11 +57,34 @@ if ($method === 'GET') {
     );
     $st->execute($params);
     $rows = $st->fetchAll();
+    $ids = array_map(static fn(array $r): int => (int)$r['id'], $rows);
+    $variantMap = [];
+    if ($ids) {
+        $ph = implode(',', array_fill(0, count($ids), '?'));
+        $pv = $pdo->prepare(
+            "SELECT id, product_id, sku, name, price, stock
+             FROM product_variants WHERE product_id IN ($ph) ORDER BY product_id, id"
+        );
+        $pv->execute($ids);
+        foreach ($pv->fetchAll() as $vr) {
+            $pid = (int)$vr['product_id'];
+            $variantMap[$pid][] = [
+                'id' => (int)$vr['id'],
+                'sku' => $vr['sku'],
+                'name' => $vr['name'],
+                'price' => $vr['price'] !== null ? (float)$vr['price'] : null,
+                'stock' => (int)$vr['stock'],
+            ];
+        }
+    }
     foreach ($rows as &$r) {
         $r['id'] = (int)$r['id'];
         $r['category_id'] = $r['category_id'] !== null ? (int)$r['category_id'] : null;
         $r['price'] = (float)$r['price'];
         $r['stock'] = (int)$r['stock'];
+        $r['variant_rows'] = $variantMap[$r['id']] ?? [];
+        $r['images'] = of_product_images_parse($r['images'] ?? null);
+        $r['cover_image'] = $r['images'][0] ?? null;
     }
     json_ok(['items' => $rows, 'total' => $total, 'page' => $page, 'per_page' => $perPage]);
 }
@@ -67,6 +99,10 @@ if ($method === 'POST') {
     $stock = (int)($in['stock'] ?? 0);
     $variants = trim((string)($in['variants'] ?? ''));
     $emoji = trim((string)($in['emoji'] ?? '📦'));
+    $imageInput = of_product_images_input($in['images'] ?? null);
+    $images = of_product_images_text($imageInput['urls']);
+    $description = trim((string)($in['description'] ?? ''));
+    $specs = trim((string)($in['specs'] ?? ''));
     $status = ($in['status'] ?? 'active') === 'hidden' ? 'hidden' : 'active';
 
     $errors = [];
@@ -91,6 +127,17 @@ if ($method === 'POST') {
     if ($stock < 0) {
         $errors['stock'] = 'Tồn kho phải là số không âm.';
     }
+    if ($imageInput['too_many']) {
+        $errors['images'] = 'Chỉ nhận tối đa 5 URL ảnh.';
+    } elseif ($imageInput['invalid']) {
+        $errors['images'] = 'URL ảnh không hợp lệ: ' . implode(', ', array_slice($imageInput['invalid'], 0, 3));
+    }
+    if (mb_strlen($description) > 20000) {
+        $errors['description'] = 'Mô tả tối đa 20.000 ký tự.';
+    }
+    if (mb_strlen($specs) > 10000) {
+        $errors['specs'] = 'Chi tiết sản phẩm tối đa 10.000 ký tự.';
+    }
     if ($errors) {
         json_fail('Dữ liệu sản phẩm không hợp lệ.', 422, $errors);
     }
@@ -99,15 +146,43 @@ if ($method === 'POST') {
     if ($exists->fetch()) {
         json_fail('Mã sản phẩm đã tồn tại.', 409, ['sku' => 'Đã tồn tại.']);
     }
-    $ins = $pdo->prepare('INSERT INTO products (sku, name, category_id, price, stock, variants, emoji, status) VALUES (?,?,?,?,?,?,?,?)');
-    $ins->execute([$sku, $name, $cat, $price, $stock, $variants ?: null, $emoji ?: null, $status]);
-    $id = (int)$pdo->lastInsertId();
-    // Ghi phong trào tồn kho ban đầu
-    if ($stock > 0) {
-        $pdo->prepare("INSERT INTO inventory_movements (product_id, change_type, quantity, note) VALUES (?, 'nhap', ?, 'Tồn kho ban đầu khi tạo sản phẩm')")
-            ->execute([$id, $stock]);
+
+    $pdo->beginTransaction();
+    try {
+        $variantRows = of_parse_variant_rows($in['variant_rows'] ?? null, $price);
+        $ins = $pdo->prepare('INSERT INTO products (sku, name, category_id, price, stock, variants, emoji, images, description, specs, status) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+        $ins->execute([$sku, $name, $cat, $price, $stock, $variants ?: null, $emoji ?: null, $images, $description ?: null, $specs ?: null, $status]);
+        $id = (int)$pdo->lastInsertId();
+
+        if (!empty($variantRows)) {
+            $sync = of_sync_variants($pdo, $id, $variantRows);
+            $stock = (int)$sync['stock'];
+            $pdo->prepare('UPDATE products SET stock = ? WHERE id = ?')->execute([$stock, $id]);
+            if ($variants === '' && $sync['count'] > 0) {
+                $variants = implode(', ', array_column($variantRows, 'name'));
+                $pdo->prepare('UPDATE products SET variants = ? WHERE id = ?')->execute([$variants, $id]);
+            }
+        }
+
+        if ($stock > 0) {
+            $pdo->prepare("INSERT INTO inventory_movements (product_id, change_type, quantity, note) VALUES (?, 'nhap', ?, 'Tồn kho ban đầu khi tạo sản phẩm')")
+                ->execute([$id, $stock]);
+        }
+        $pdo->commit();
+    } catch (OrderFlowException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        json_fail($e->getMessage(), $e->statusCode);
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        json_fail('Không thể thêm sản phẩm.', 500);
     }
-    json_ok(['id' => $id, 'sku' => $sku, 'name' => $name, 'category_id' => $cat, 'price' => $price, 'stock' => $stock, 'variants' => $variants, 'emoji' => $emoji, 'status' => $status], 'Đã thêm sản phẩm.', 201);
+
+    $imageList = of_product_images_parse($images);
+    json_ok(['id' => $id, 'sku' => $sku, 'name' => $name, 'category_id' => $cat, 'price' => $price, 'stock' => $stock, 'variants' => $variants, 'emoji' => $emoji, 'images' => $imageList, 'cover_image' => $imageList[0] ?? null, 'description' => $description, 'specs' => $specs, 'status' => $status, 'variant_rows' => $variantRows ?? []], 'Đã thêm sản phẩm.', 201);
 }
 
 json_fail('Phương thức không được hỗ trợ.', 405);

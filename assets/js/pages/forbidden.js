@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – forbidden.js (trang 403 – không có quyền truy cập)
+   Shopee – forbidden.js (trang 403 – không có quyền truy cập)
    Hiển thị trang nào bị chặn, tài khoản/vai trò hiện tại và lối thoát.
    ============================================================ */
 (function () {

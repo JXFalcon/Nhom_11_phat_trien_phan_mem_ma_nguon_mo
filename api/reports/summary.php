@@ -15,6 +15,49 @@ if ($method !== 'GET') {
 $u = require_role('admin', 'staff');
 $pdo = db();
 
+/* Xuất báo cáo CSV */
+if ((string)($_GET['export'] ?? '') === 'csv') {
+    $daysParam = (string)($_GET['days'] ?? 'all');
+    $days = in_array($daysParam, ['7', '30', '60'], true) ? (int)$daysParam : null;
+
+    $dayCond = '';
+    $dayParams = [];
+    if ($days !== null) {
+        $dayCond = ' AND o.order_date >= DATE_SUB(NOW(), INTERVAL ? DAY)';
+        $dayParams[] = $days;
+    }
+
+    $filename = 'bao_cao_don_hang_' . date('Ymd_His') . '.csv';
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: no-cache, must-revalidate');
+    header('Pragma: public');
+
+    $out = fopen('php://output', 'w');
+    fprintf($out, chr(0xEF) . chr(0xBB) . chr(0xBF)); // UTF-8 BOM
+    fputcsv($out, ['Mã đơn', 'Khách hàng', 'Ngày đặt', 'Số tiền', 'Phương thức', 'Trạng thái', 'Thanh toán'], null, ',');
+
+    $st = $pdo->prepare(
+        "SELECT o.order_code, o.customer_name, o.order_date, o.total_amount, o.payment_method, o.status,
+                (SELECT p.status FROM payments p WHERE p.order_id = o.id ORDER BY p.id DESC LIMIT 1) AS payment_status
+         FROM orders o WHERE 1=1 $dayCond ORDER BY o.order_date DESC"
+    );
+    $st->execute($dayParams);
+    foreach ($st->fetchAll() as $row) {
+        fputcsv($out, [
+            $row['order_code'],
+            $row['customer_name'],
+            $row['order_date'],
+            $row['total_amount'],
+            $row['payment_method'],
+            $row['status'],
+            $row['payment_status'],
+        ], null, ',');
+    }
+    fclose($out);
+    exit;
+}
+
 $daysParam = (string)($_GET['days'] ?? 'all');
 $days = in_array($daysParam, ['7', '30', '60'], true) ? (int)$daysParam : null;
 
@@ -41,6 +84,17 @@ $st = $pdo->prepare(
 $st->execute($dayParams);
 $stats = $st->fetch();
 $stats['revenue'] = (float)$stats['revenue'];
+
+// Hoàn tiền mô phỏng ghi trong payments (status hoan_tien) – trừ ra khỏi doanh thu
+$stP = $pdo->prepare(
+    "SELECT COALESCE(SUM(p.amount), 0) AS paid_refunds
+     FROM payments p JOIN orders o ON o.id = p.order_id
+     WHERE p.status = 'hoan_tien' $dayCond"
+);
+$stP->execute($dayParams);
+$paidRefunds = (float)$stP->fetchColumn();
+$stats['paid_refunds'] = $paidRefunds;
+$stats['revenue_net'] = $stats['revenue'] - $paidRefunds;
 
 $st = $pdo->prepare(
     "SELECT

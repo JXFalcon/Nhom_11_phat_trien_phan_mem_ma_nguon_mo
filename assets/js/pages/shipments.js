@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – shipments.js (Quản lý giao hàng)
+   Shopee – shipments.js (Quản lý giao hàng)
    Giai đoạn 2: API MySQL — server đồng bộ trạng thái đơn hàng
    khi giao thành công/thất bại (transaction).
    ============================================================ */

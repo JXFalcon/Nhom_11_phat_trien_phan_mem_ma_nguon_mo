@@ -68,8 +68,13 @@ obj/
 *.suo
 
 # -----------------------------
-# Log & file tạm
+# Log & file t?m
 # -----------------------------
 *.log
 *.tmp
 .tmp/
+
+# -----------------------------
+# C?u h�nh c?c b? (kh�ng commit m?t kh?u)
+# -----------------------------
+config/database.local.php

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopee - Mua sắm trực tuyến</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            shopee: {
+              orange: '#FF4D00',
+              orangeDark: '#E03F00',
+              light: '#FFF6F0',
+              grayBg: '#F5F5F5',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.4s ease-out',
+            'slide-up': 'slideUp 0.3s ease-out',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { transform: 'translateY(20px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #F5F5F5; }
+    .shopee-orange { color: #FF4D00; }
+    .bg-shopee-orange { background-color: #FF4D00; }
+    .hover\:bg-shopee-orange:hover { background-color: #FF4D00; }
+    .border-shopee { border-color: #FF4D00; }
+    .text-shopee { color: #FF4D00; }
+    .carousel-item { transition: transform 0.5s ease; }
+    .product-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ccc; }
+  </style>
+</head>
+<body class="text-gray-900 antialiased">
+
+<!-- ===================== TOP BAR ===================== -->
+  <div class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-8 text-xs text-gray-500">
+        <div class="flex items-center space-x-4 hidden sm:flex">
+          <span class="flex items-center">📦 Giao hàng miễn phí cho đơn trên 200.000đ</span>
+          <span>•</span>
+          <span class="flex items-center">🎁 Nhận mã giảm giá đến 50%</span>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="#" class="hover:text-shopee">Hỗ trợ khách hàng</a>
+          <span>•</span>
+          <div id="accountArea" class="relative"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MAIN HEADER ===================== -->
+  <header class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-20">
+        <!-- Logo -->
+        <div class="flex-shrink-0 cursor-pointer">
+          <a href="index.html" class="flex items-center gap-2">
+            <div class="bg-shopee-orange text-white p-1.5 rounded-lg">
+              <i class="fa-solid fa-bag-shopping text-lg"></i>
+            </div>
+            <span class="font-bold text-xl tracking-tight text-shopee">SHOPEE<span class="text-gray-900">.vn</span></span>
+          </a>
+        </div>
+
+        <!-- Search -->
+        <div class="hidden md:flex-1 max-w-2xl mx-10">
+          <div class="relative">
+            <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm, thương hiệu..." class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-shopee focus:border-transparent transition-all text-sm" />
+            <button class="absolute left-3 top-2.5 text-gray-400 hover:text-shopee"><i class="fa-solid fa-search"></i></button>
+          </div>
+          <div class="mt-1 flex gap-2 overflow-x-auto pb-1 custom-scrollbar" id="searchSuggestions">
+            <span class="whitespace-nowrap bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-600">Đang tải gợi ý...</span>
+          </div>
+        </div>
+
+        <!-- Cart & User -->
+        <div class="flex items-center gap-4 md:gap-6">
+          <div class="relative cursor-pointer group" id="cartBtn">
+            <a href="cart.html" class="relative p-2 text-gray-600 hover:text-shopee transition">
+              <i class="fa-solid fa-cart-shopping text-xl"></i>
+              <span id="cartBadge" class="absolute -top-1 -right-1 bg-shopee-orange text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center transform scale-0 group-hover:scale-100 transition-transform">0</span>
+            </a>
+          </div>
+          <a href="dashboard.html" id="btnAdminEntry" class="bg-shopee-orange text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-shopee-orangeDark transition shadow-md">Quản trị hệ thống</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== CATALOG ===================== -->
+  <section class="py-8 min-h-[50vh]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-wrap justify-between items-center mb-6 gap-3">
+        <div>
+          <h2 class="text-lg font-bold" id="catalogTitle">Tất cả sản phẩm</h2>
+          <p class="text-xs text-gray-500">Danh mục sản phẩm đồng bộ trực tiếp với hệ thống Shopee.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <select id="shopSort" class="border border-gray-300 rounded-md text-xs px-2 py-1.5">
+            <option value="new">Mới nhất</option>
+            <option value="low">Giá tăng dần</option>
+            <option value="high">Giá giảm dần</option>
+          </select>
+          <span class="text-xs text-gray-400" id="shopCount"></span>
+        </div>
+      </div>
+
+      <div id="shopCategoryRow" class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar mb-6"></div>
+
+      <div id="shopGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-4">
+        <p class="col-span-full text-sm text-gray-400 text-center">Đang tải sản phẩm...</p>
+      </div>
+      <p id="shopEmpty" class="hidden col-span-full bg-white rounded-xl border border-gray-100 p-10 text-center text-gray-500 text-sm">Không có sản phẩm phù hợp.</p>
+    </div>
+  </section>
+
+<footer class="bg-white border-t border-gray-200 py-10 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-8 mb-10">
+        <div>
+          <div class="flex items-center gap-2 mb-4">
+            <div class="bg-shopee-orange text-white p-1.5 rounded-lg"><i class="fa-solid fa-bag-shopping"></i></div>
+            <span class="font-bold text-lg tracking-tight text-shopee">SHOPEE<span class="text-gray-900">.vn</span></span>
+          </div>
+          <p class="text-sm text-gray-600 max-w-xs">Nền tảng thương mại điện tử hàng đầu Việt Nam, kết nối hàng triệu người mua và người bán.</p>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm uppercase tracking-wider text-gray-700 mb-4">Chăm sóc khách hàng</h4>
+          <ul class="space-y-2 text-sm text-gray-600">
+            <li><a href="#" class="hover:text-shopee">Trung tâm trợ giúp</a></li>
+            <li><a href="#" class="hover:text-shopee">Hướng dẫn mua hàng</a></li>
+            <li><a href="#" class="hover:text-shopee">Chính sách đổi trả</a></li>
+            <li><a href="#" class="hover:text-shopee">Liên hệ người bán</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm uppercase tracking-wider text-gray-700 mb-4">Về chúng tôi</h4>
+          <ul class="space-y-2 text-sm text-gray-600">
+            <li><a href="#" class="hover:text-shopee">Giới thiệu Shopee</a></li>
+            <li><a href="#" class="hover:text-shopee">Tuyển dụng</a></li>
+            <li><a href="#" class="hover:text-shopee">Điều khoản sử dụng</a></li>
+            <li><a href="#" class="hover:text-shopee">Chính sách bảo mật</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="font-semibold text-sm uppercase tracking-wider text-gray-700 mb-4">Tải ứng dụng</h4>
+          <div class="flex gap-2">
+            <a href="#" class="flex-1 bg-gray-100 rounded-lg p-3 text-center text-xs font-semibold text-gray-700 hover:bg-shopee hover:text-white transition">App Store</a>
+            <a href="#" class="flex-1 bg-gray-100 rounded-lg p-3 text-center text-xs font-semibold text-gray-700 hover:bg-shopee hover:text-white transition">Google Play</a>
+          </div>
+          <div class="mt-4 flex gap-3">
+            <a href="#" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:text-shopee transition"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:text-shopee transition"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="#" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:text-shopee transition"><i class="fa-brands fa-instagram"></i></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-100 pt-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
+        <div class="flex gap-4 text-xs">
+          <span>© 2024 Shopee.vn</span>
+          <span>•</span>
+          <span>Công ty Cổ phần Shopee Việt Nam</span>
+        </div>
+        <div class="flex gap-6 text-xs">
+          <img src="https://via.placeholder.com/40x24/1A237E/FFFFFF?text=MoMo" alt="MoMo" class="h-5" />
+          <img src="https://via.placeholder.com/40x24/FF3E00/FFFFFF?text=ZaloPay" alt="ZaloPay" class="h-5" />
+          <img src="https://via.placeholder.com/40x24/0052CC/FFFFFF?text=VISA" alt="VISA" class="h-5" />
+          <img src="https://via.placeholder.com/40x24/FB3E02/FFFFFF?text=MasterCard" alt="MasterCard" class="h-5" />
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/data.js?v=3"></script>
+  <script src="assets/js/api.js?v=3"></script>
+  <script>
+    (function () {
+      const OF = window.OF;
+      const grid = document.getElementById('shopGrid');
+      const empty = document.getElementById('shopEmpty');
+      const catRow = document.getElementById('shopCategoryRow');
+      const params = new URLSearchParams(location.search);
+      const catId = params.get('category_id') || '';
+      const q = (params.get('q') || '').trim();
+      let products = [];
+
+      function renderCats(cats) {
+        const htmlHome = '<a href="shop.html" class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border ' + (!catId ? 'bg-shopee-orange text-white border-shopee-orange' : 'bg-white text-gray-600 border-gray-200 hover:border-shopee') + ' transition">Tất cả</a>';
+        catRow.innerHTML = htmlHome + (cats || []).map(c =>
+          '<a href="shop.html?category_id=' + c.id + '" class="whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border ' + (String(catId) === String(c.id) ? 'bg-shopee-orange text-white border-shopee-orange' : 'bg-white text-gray-600 border-gray-200 hover:border-shopee') + ' transition">' + OF.escapeHtml(c.name) + '</a>'
+        ).join('');
+      }
+
+      function applySort(list) {
+        const mode = document.getElementById('shopSort').value;
+        const arr = list.slice();
+        if (mode === 'low') arr.sort((a, b) => a.price - b.price);
+        if (mode === 'high') arr.sort((a, b) => b.price - a.price);
+        return arr;
+      }
+
+      function render() {
+        const list = applySort(products);
+        document.getElementById('shopCount').textContent = list.length + ' sản phẩm';
+        if (!list.length) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+        empty.classList.add('hidden');
+        grid.innerHTML = list.map(p => {
+          const soldOut = Number(p.stock) <= 0;
+          const lowStock = !soldOut && Number(p.stock) <= 5;
+          const cover = p.cover_image
+            ? `<img src="${OF.escapeHtml(p.cover_image)}" alt="${OF.escapeHtml(p.name)}" class="h-full w-full object-contain p-2 transition group-hover:scale-105" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')" /><span class="text-6xl hidden">${OF.escapeHtml(p.emoji || '📦')}</span>`
+            : `<span class="text-6xl" title="${OF.escapeHtml(p.sku)}">${OF.escapeHtml(p.emoji || '📦')}</span>`;
+          return `
+          <div class="product-card bg-white rounded-xl border border-gray-100 overflow-hidden cursor-pointer group" onclick="location.href='product.html?id=${p.id}'">
+            <div class="relative h-48 bg-shopee-light flex items-center justify-center overflow-hidden">
+              ${cover}
+              ${lowStock ? `<span class="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">Chỉ còn ${p.stock}</span>` : ''}
+              ${soldOut ? '<span class="absolute top-2 left-2 bg-gray-800 text-white text-xs font-bold px-2 py-0.5 rounded">Hết hàng</span>' : ''}
+            </div>
+            <div class="p-3">
+              <h3 class="text-sm font-medium text-gray-900 line-clamp-2 mb-1">${OF.escapeHtml(p.name)}</h3>
+              <div class="flex items-baseline gap-2 mb-2">
+                <span class="text-lg font-bold text-shopee">${Number(p.price).toLocaleString()}₫</span>
+              </div>
+              <div class="flex items-center gap-1 text-xs">
+                <span class="bg-gray-100 px-2 py-0.5 rounded-full text-gray-600">${OF.escapeHtml(p.category_name || 'Khác')}</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      document.getElementById('shopSort').addEventListener('change', render);
+
+      (async function boot() {
+        const [catRes, prodRes] = await Promise.all([
+          OF.api.get('categories/index.php', 'public=1'),
+        ]);
+        const cats = (catRes.success ? catRes.data : []);
+        renderCats(cats);
+        const active = cats.find(c => String(c.id) === String(catId));
+        document.getElementById('catalogTitle').textContent = active ? active.name : (q ? 'Kết quả tìm kiếm' : 'Tất cả sản phẩm');
+        if (q) document.getElementById('catalogTitle').textContent = 'Tìm "' + q + '"';
+
+        const query = 'per_page=200&status=active&public=1' + (catId ? '&category_id=' + catId : '') + (q ? '&q=' + encodeURIComponent(q) : '');
+        const res = await OF.api.get('products/index.php', query);
+        if (res.success) { products = res.data.items || []; render(); }
+        else { grid.innerHTML = ''; empty.textContent = res.message || 'Không tải được sản phẩm.'; empty.classList.remove('hidden'); }
+
+        // Header giống trang chủ: tài khoản + giỏ hàng
+        const area = document.getElementById('accountArea');
+        const entry = document.getElementById('btnAdminEntry');
+        const user = OF.session.getUser();
+        if (entry) {
+          const role = user ? user.role : '';
+          entry.href = !user ? 'login.html' : (role === 'admin' || role === 'staff') ? 'dashboard.html' : 'orders.html';
+        }
+        if (!user) {
+          area.innerHTML = '<a href="register.html" class="hover:text-shopee">Đăng ký</a><span class="mx-2">/</span><a href="login.html" class="text-shopee font-semibold">Đăng nhập</a>';
+        } else {
+          const fullName = user.full_name || '';
+          const initial = fullName.trim().charAt(0).toUpperCase() || '?';
+          area.innerHTML = '<span class="w-6 h-6 rounded-full bg-shopee-orange text-white text-xs font-bold flex items-center justify-center">' + OF.escapeHtml(initial) + '</span><span class="font-medium">Xin chào, ' + OF.escapeHtml(fullName) + '</span>';
+        }
+        if (OF.session.getToken()) {
+          const cb = document.getElementById('cartBadge');
+          const res2 = await OF.api.get('carts/index.php');
+          if (res2.success && Number(res2.data.item_count) > 0) {
+            cb.textContent = res2.data.item_count;
+            cb.classList.remove('scale-0'); cb.classList.add('scale-100');
+          }
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>

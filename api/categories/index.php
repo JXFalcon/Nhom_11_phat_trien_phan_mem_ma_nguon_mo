@@ -11,7 +11,10 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $pdo = db();
 
 if ($method === 'GET') {
-    require_auth();
+    // Storefront (index.html) gọi với ?public=1: xem danh mục không cần đăng nhập.
+    if (!isset($_GET['public'])) {
+        require_auth();
+    }
     $rows = $pdo->query(
         'SELECT c.*, (SELECT COUNT(*) FROM products p WHERE p.category_id = c.id) AS product_count
          FROM categories c ORDER BY c.id'

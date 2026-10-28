@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – categories.js (Quản lý danh mục)
+   Shopee – categories.js (Quản lý danh mục)
    Giai đoạn 2: dữ liệu từ API MySQL (api/categories/*).
    ============================================================ */
 (function () {

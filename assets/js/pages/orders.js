@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – orders.js (Quản lý đơn hàng)
+   Shopee – orders.js (Quản lý đơn hàng)
    Giai đoạn 2: list/chi tiết/đổi trạng thái/tạo đơn qua API MySQL.
    Tạo đơn: transaction phía server → chặn tranh hàng, trừ tồn thật.
    ============================================================ */
@@ -60,6 +60,9 @@
         '<td class="text-right"><strong>' + OF.fmt.money(o.total_amount) + "</strong></td>" +
         "<td>" + OF.escapeHtml(OF.PAYMENT_METHODS[o.payment_method] || o.payment_method).split(" ")[0] + "</td>" +
         "<td>" + OF.badgeHTML(OF.ORDER_STATUS, o.status) + "</td>" +
+        (o.reserved_until && o.status === 'cho_xac_nhan'
+          ? '<td class="text-right"><span class="expire-badge" data-until="' + OF.escapeHtml(o.reserved_until) + '">–</span></td>'
+          : '<td class="text-right"></td>') +
         '<td><div class="cell-actions">' +
           '<button class="btn btn-sm btn-icon" data-view="' + o.id + '" title="Xem chi tiết">' + OF.icon("eye", "icon-sm") + "</button>" +
           (canManage() && NEXT_STATUS[o.status] && NEXT_STATUS[o.status].length
@@ -67,6 +70,9 @@
             : "") +
           (canManage() && o.status !== "da_huy" && o.status !== "da_giao"
             ? '<button class="btn btn-sm btn-icon" data-cancel="' + o.id + '" title="Hủy đơn" style="color:var(--danger)">' + OF.icon("close", "icon-sm") + "</button>"
+            : "") +
+          (canManage() && o.status === "cho_xac_nhan"
+            ? '<button class="btn btn-sm btn-icon" data-expire="' + o.id + '" title="Hết hạn giữ hàng" style="color:#b45309">' + OF.icon("clock", "icon-sm") + "</button>"
             : "") +
         "</div></td>" +
       "</tr>"
@@ -78,10 +84,38 @@
       el.addEventListener("click", () => openStatusModal(Number(el.getAttribute("data-status")))));
     tbody.querySelectorAll("[data-cancel]").forEach((el) =>
       el.addEventListener("click", () => cancelOrder(Number(el.getAttribute("data-cancel")))));
+    tbody.querySelectorAll("[data-expire]").forEach((el) =>
+      el.addEventListener("click", () => expireOrder(Number(el.getAttribute("data-expire")))));
 
     OF.ui.renderPagination(document.getElementById("paginationBar"), total, page, PER_PAGE, (p) => {
       page = p;
       loadOrders();
+    });
+    startExpireCountdown();
+  }
+
+  /* Đếm ngrosso thời gian hết hạn giữ hàng */
+  let expireInterval = null;
+  function startExpireCountdown() {
+    if (expireInterval) clearInterval(expireInterval);
+    updateExpireBadges();
+    expireInterval = setInterval(updateExpireBadges, 1000);
+  }
+
+  function updateExpireBadges() {
+    const now = new Date();
+    document.querySelectorAll('.expire-badge').forEach((el) => {
+      const until = new Date(el.getAttribute('data-until'));
+      const diffSec = Math.floor((until - now) / 1000);
+      if (diffSec > 0) {
+        const m = Math.floor(diffSec / 60);
+        const s = diffSec % 60;
+        el.textContent = 'Hết hạn sau ' + m + 'p ' + s + 's';
+        el.style.color = diffSec < 300 ? '#b45309' : '#16a34a';
+      } else {
+        el.textContent = 'Đã hết hạn';
+        el.style.color = '#dc2626';
+      }
     });
   }
 
@@ -218,11 +252,29 @@
     });
   }
 
+  /* ---------- Hết hạn giữ hàng ---------- */
+  function expireOrder(orderId) {
+    const o = ordersCache.find((x) => x.id === orderId);
+    if (!o) return;
+    OF.ui.confirm({
+      title: "Hết hạn giữ hàng đơn " + o.order_code + "?",
+      message: "Đơn của “" + o.customer_name + "” sẽ chuyển sang Đã hủy. Server hoàn kho đúng 1 lần và đánh dấu thanh toán chờ là thất bại. Hành động này không thể hoàn tác.",
+      danger: true,
+      confirmText: "Hết hạn & hủy",
+    }).then(async (ok) => {
+      if (!ok) return;
+      const res = await OF.api.post("orders/expire.php", { id: o.id });
+      if (!res.success) { OF.ui.toast("error", res.message || "Hết hạn đơn thất bại."); return; }
+      OF.ui.toast("success", "Đã xử lý " + res.data.expired_count + " đơn hết hạn giữ hàng.");
+      loadOrders();
+    });
+  }
+
   /* ---------- Tạo đơn hàng (yêu cầu 6) ---------- */
   let productOptions = [];
 
   async function openCreateForm() {
-    const prodRes = await OF.api.get("products/index.php", "status=active&per_page=50");
+    const prodRes = await OF.api.get("products/index.php", "status=active&per_page=200");
     if (!prodRes.success) { OF.ui.toast("error", prodRes.message || "Không tải được sản phẩm."); return; }
     productOptions = prodRes.data.items || [];
     const u = OF.session.getUser() || {};
@@ -238,18 +290,17 @@
       size: "md",
       body:
         '<form id="createOrderForm" novalidate>' +
-          (isCustomer
-            ? ""
-            : '<div class="form-row">' +
-              '<div class="form-group"><label class="form-label">Tên khách hàng <span class="req">*</span></label>' +
-                '<input class="form-control" id="coName" value="' + OF.escapeHtml(u.full_name || "") + '" />' +
-                '<div class="form-error" data-error-for="coName"></div></div>' +
-              '<div class="form-group"><label class="form-label">Số điện thoại</label>' +
-                '<input class="form-control" id="coPhone" placeholder="0901234567" value="' + OF.escapeHtml(u.phone || "") + '" /></div>' +
-            "</div>" +
-            '<div class="form-group"><label class="form-label">Địa chỉ</label>' +
-              '<input class="form-control" id="coAddress" placeholder="Số nhà, đường, quận, thành phố" /></div>'
-          ) +
+          '<div class="form-row">' +
+            '<div class="form-group"><label class="form-label">Tên khách hàng <span class="req">*</span></label>' +
+              '<input class="form-control" id="coName" value="' + OF.escapeHtml(u.full_name || "") + '"' + (isCustomer ? " readonly" : "") + ' />' +
+              '<div class="form-error" data-error-for="coName"></div></div>' +
+            '<div class="form-group"><label class="form-label">Số điện thoại <span class="req">*</span></label>' +
+              '<input class="form-control" id="coPhone" placeholder="0901234567" value="' + OF.escapeHtml(u.phone || "") + '" />' +
+              '<div class="form-error" data-error-for="coPhone"></div></div>' +
+          "</div>" +
+          '<div class="form-group"><label class="form-label">Địa chỉ giao hàng <span class="req">*</span></label>' +
+            '<input class="form-control" id="coAddress" placeholder="Số nhà, đường, quận, thành phố" />' +
+            '<div class="form-error" data-error-for="coAddress"></div></div>' +
           '<div class="form-group"><label class="form-label">Phương thức thanh toán</label>' +
             '<select class="form-select" id="coPayMethod">' +
               '<option value="cod">COD (thanh toán khi nhận)</option>' +
@@ -261,6 +312,11 @@
               '<option value="">— Chọn sản phẩm —</option>' + prodOpts +
             "</select>" +
             '<div class="form-error" data-error-for="coProduct"></div></div>' +
+          '<div class="form-group" id="coVariantWrap" style="display:none">' +
+            '<label class="form-label">Biến thể <span class="req">*</span></label>' +
+            '<select class="form-select" id="coVariant"></select>' +
+            '<div class="form-hint" id="coVariantHint"></div>' +
+            '<div class="form-error" data-error-for="coVariant"></div></div>' +
           '<div class="form-row">' +
             '<div class="form-group"><label class="form-label">Số lượng <span class="req">*</span></label>' +
               '<input class="form-control" id="coQty" type="number" min="1" step="1" value="1" /></div>' +
@@ -277,6 +333,34 @@
         const picked = [];
         const itemsBox = api.el.querySelector("#coItems");
         const totalEl = api.el.querySelector("#coTotal");
+        const prodSel = api.el.querySelector("#coProduct");
+        const variantWrap = api.el.querySelector("#coVariantWrap");
+        const variantSel = api.el.querySelector("#coVariant");
+        const variantHint = api.el.querySelector("#coVariantHint");
+
+        function currentProduct() {
+          return productOptions.find((p) => p.id === Number(prodSel.value)) || null;
+        }
+
+        function refreshVariants() {
+          const p = currentProduct();
+          const rows = (p && p.variant_rows) || [];
+          if (!p || !rows.length) {
+            variantWrap.style.display = "none";
+            variantSel.innerHTML = "";
+            variantHint.textContent = "";
+            return;
+          }
+          variantWrap.style.display = "";
+          variantSel.innerHTML = '<option value="">— Chọn biến thể —</option>' +
+            rows.map((v) =>
+              '<option value="' + v.id + '" data-price="' + (v.price != null ? v.price : p.price) +
+              '" data-stock="' + v.stock + '" data-name="' + OF.escapeHtml(v.name) + '">' +
+              OF.escapeHtml(v.name) + " · " + OF.fmt.money(v.price != null ? v.price : p.price) +
+              " (còn " + v.stock + ")</option>"
+            ).join("");
+          variantHint.textContent = "Sản phẩm có " + rows.length + " biến thể. Vui lòng chọn đúng biến thể.";
+        }
 
         function renderItems() {
           if (!picked.length) {
@@ -286,7 +370,7 @@
           }
           itemsBox.innerHTML = '<div class="table-wrap"><table class="order-items-table"><thead><tr><th>Sản phẩm</th><th class="text-right">SL</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th><th></th></tr></thead><tbody>' +
             picked.map((it, idx) =>
-              "<tr><td>" + OF.escapeHtml(it.name) + "</td>" +
+              "<tr><td>" + OF.escapeHtml(it.name) + (it.variant ? ' <span class="muted">(' + OF.escapeHtml(it.variant) + ")</span>" : "") + "</td>" +
               '<td class="text-right">' + it.quantity + "</td>" +
               '<td class="text-right">' + OF.fmt.money(it.unit_price) + "</td>" +
               '<td class="text-right"><strong>' + OF.fmt.money(it.unit_price * it.quantity) + "</strong></td>" +
@@ -298,27 +382,54 @@
           totalEl.textContent = OF.fmt.money(total);
         }
         renderItems();
+        refreshVariants();
+        prodSel.addEventListener("change", refreshVariants);
 
         api.el.querySelector("#coAddItem").addEventListener("click", () => {
-          const sel = api.el.querySelector("#coProduct");
-          const pid = Number(sel.value);
+          const pid = Number(prodSel.value);
           const qty = Math.max(1, Number(api.el.querySelector("#coQty").value) || 1);
           const err = api.el.querySelector('[data-error-for="coProduct"]');
+          const vErr = api.el.querySelector('[data-error-for="coVariant"]');
           err.classList.remove("show");
+          vErr.classList.remove("show");
           if (!pid) { err.textContent = "Hãy chọn sản phẩm."; err.classList.add("show"); return; }
-          const opt = sel.options[sel.selectedIndex];
-          const stock = Number(opt.getAttribute("data-stock"));
-          const price = Number(opt.getAttribute("data-price"));
-          const name = opt.getAttribute("data-name");
-          const exist = picked.find((x) => x.product_id === pid);
+          const p = currentProduct();
+          const hasVariants = !!(p.variant_rows && p.variant_rows.length);
+          let variantId = null;
+          let variantName = "";
+          let stock = Number(p.stock);
+          let price = Number(p.price);
+          if (hasVariants) {
+            variantId = Number(variantSel.value);
+            if (!variantId) {
+              vErr.textContent = "Hãy chọn biến thể.";
+              vErr.classList.add("show");
+              return;
+            }
+            const vopt = variantSel.options[variantSel.selectedIndex];
+            stock = Number(vopt.getAttribute("data-stock"));
+            price = Number(vopt.getAttribute("data-price"));
+            variantName = vopt.getAttribute("data-name");
+          }
+          const key = pid + ":" + (variantId || 0);
+          const exist = picked.find((x) => x.key === key);
           const currentQty = exist ? exist.quantity : 0;
           if (currentQty + qty > stock) {
-            err.textContent = "Tồn kho chỉ còn " + stock + " (đang giữ trong đơn: " + currentQty + ").";
-            err.classList.add("show");
+            const target = hasVariants ? vErr : err;
+            target.textContent = "Tồn kho chỉ còn " + stock + " (đang giữ trong đơn: " + currentQty + ").";
+            target.classList.add("show");
             return;
           }
           if (exist) exist.quantity += qty;
-          else picked.push({ product_id: pid, name, quantity: qty, unit_price: price });
+          else picked.push({
+            key,
+            product_id: pid,
+            variant_id: variantId,
+            variant: variantName,
+            name: p.name,
+            quantity: qty,
+            unit_price: price,
+          });
           renderItems();
         });
 
@@ -333,24 +444,27 @@
           btn.disabled = true;
           const body = {
             payment_method: api.el.querySelector("#coPayMethod").value,
-            items: picked.map((x) => ({ product_id: x.product_id, quantity: x.quantity })),
+            customer_name: api.el.querySelector("#coName").value.trim(),
+            phone: api.el.querySelector("#coPhone").value.trim(),
+            address: api.el.querySelector("#coAddress").value.trim(),
+            items: picked.map((x) => ({
+              product_id: x.product_id,
+              variant_id: x.variant_id || null,
+              variant: x.variant || "",
+              quantity: x.quantity,
+            })),
           };
-          if (!isCustomer) {
-            body.customer_name = api.el.querySelector("#coName").value.trim();
-            body.phone = api.el.querySelector("#coPhone").value.trim();
-            body.address = api.el.querySelector("#coAddress").value.trim();
-          } else {
-            body.phone = u.phone || "";
-            body.address = api.el.querySelector("#coAddress") ? api.el.querySelector("#coAddress").value.trim() : "";
-          }
           const res = await OF.api.post("orders/index.php", body);
           btn.disabled = false;
           if (!res.success) {
             OF.ui.toast("error", res.message || "Tạo đơn thất bại.");
-            if (res.errors && res.errors.customer_name) {
-              const err = api.el.querySelector('[data-error-for="coName"]');
-              if (err) { err.textContent = res.errors.customer_name; err.classList.add("show"); }
-            }
+            const map = { customer_name: "coName", phone: "coPhone", address: "coAddress", items: "coProduct" };
+            Object.keys(map).forEach((field) => {
+              if (res.errors && res.errors[field]) {
+                const err = api.el.querySelector('[data-error-for="' + map[field] + '"]');
+                if (err) { err.textContent = res.errors[field]; err.classList.add("show"); }
+              }
+            });
             return;
           }
           OF.ui.toast("success", res.message || "Đã tạo đơn hàng.");
@@ -372,6 +486,10 @@
       if (sel) sel.value = statusF;
     }
     loadOrders();
+
+    window.addEventListener('beforeunload', () => {
+      if (expireInterval) clearInterval(expireInterval);
+    });
 
     document.getElementById("btnCreateOrder").addEventListener("click", openCreateForm);
     document.getElementById("searchInput").addEventListener("input", (e) => {

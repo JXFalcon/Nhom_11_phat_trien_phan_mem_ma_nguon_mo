@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – products.js (Quản lý sản phẩm)
+   Shopee – products.js (Quản lý sản phẩm)
    Giai đoạn 2: CRUD qua API MySQL (api/products/*).
    ============================================================ */
 (function () {
@@ -67,14 +67,20 @@
     }
 
     tbody.innerHTML = items.map((p) => {
-      const stockBadge = p.stock <= 5
-        ? '<span class="badge badge-red">Sắp hết (' + p.stock + ")</span>"
-        : '<strong>' + p.stock + "</strong>";
+      const stock = Number(p.stock) || 0;
+      const stockBadge = stock <= 0
+        ? '<span class="badge badge-red">Hết hàng</span>'
+        : stock <= 5
+          ? '<span class="badge badge-orange">Còn ít hàng (' + stock + ")</span>"
+          : '<strong>' + stock + "</strong>";
       const st = p.status === "active"
         ? '<span class="badge badge-green">Đang bán</span>'
         : '<span class="badge badge-gray">Ẩn / ngừng bán</span>';
+      const thumb = p.cover_image
+        ? '<span class="prod-thumb prod-thumb-img"><img src="' + OF.escapeHtml(p.cover_image) + '" alt="" loading="lazy" /></span>'
+        : '<span class="prod-thumb">' + OF.escapeHtml(p.emoji || "📦") + "</span>";
       return "<tr>" +
-        '<td><div class="prod-cell"><span class="prod-thumb">' + OF.escapeHtml(p.emoji || "📦") + "</span>" +
+        '<td><div class="prod-cell">' + thumb +
           '<span class="prod-cell-name">' + OF.escapeHtml(p.name) + "</span></div></td>" +
         "<td><strong>" + OF.escapeHtml(p.sku) + "</strong></td>" +
         "<td>" + OF.escapeHtml(p.category_name || "—") + "</td>" +
@@ -138,7 +144,21 @@
           "</div>" +
           '<div class="form-group"><label class="form-label">Biến thể (các cách cách nhau bởi dấu ;)</label>' +
             '<input class="form-control" id="pVariants" placeholder="256GB / Đen; 512GB / Trắng" value="' + OF.escapeHtml(editing ? editing.variants : "") + '" />' +
-            '<div class="form-hint">Mỗi biến thể cách nhau bằng dấu chấm phẩy.</div></div>' +
+            '<div class="form-hint">Tên hiển thị nhanh; bảng bên dưới quản lý giá và tồn kho riêng từng biến thể.</div></div>' +
+          '<div class="form-group"><label class="form-label">Ảnh sản phẩm (URL)</label>' +
+            '<textarea class="form-control" id="pImages" rows="5" style="min-height:110px" placeholder="https://.../anh-1.jpg&#10;https://.../anh-2.jpg">' + OF.escapeHtml(editing && Array.isArray(editing.images) ? editing.images.join("\n") : "") + '</textarea>' +
+            '<div class="form-hint">Mỗi dòng một URL ảnh (http/https), tối đa 5 ảnh. Ảnh đầu tiên là ảnh bìa.</div>' +
+            '<div class="form-error" data-error-for="pImages"></div></div>' +
+          '<div class="form-group"><label class="form-label">Mô tả sản phẩm</label>' +
+            '<textarea class="form-control" id="pDescription" rows="4" style="min-height:100px" placeholder="Giới thiệu, công dụng, điểm nổi bật...">' + OF.escapeHtml(editing && editing.description ? editing.description : "") + '</textarea>' +
+            '<div class="form-error" data-error-for="pDescription"></div></div>' +
+          '<div class="form-group"><label class="form-label">Chi tiết sản phẩm</label>' +
+            '<textarea class="form-control" id="pSpecs" rows="5" style="min-height:110px" placeholder="Màn hình: 6.7 inch&#10;Pin: 5000mAh&#10;Bảo hành: 12 tháng">' + OF.escapeHtml(editing && editing.specs ? editing.specs : "") + '</textarea>' +
+            '<div class="form-hint">Mỗi dòng một thuộc tính dạng <strong>Tên: Giá trị</strong>.</div>' +
+            '<div class="form-error" data-error-for="pSpecs"></div></div>' +
+          '<div class="form-group"><label class="form-label">Biến thể &amp; tồn kho</label>' +
+            '<div class="table-wrap"><table class="order-items-table"><thead><tr><th>Tên biến thể</th><th>SKU</th><th class="text-right">Giá</th><th class="text-right">Tồn</th><th></th></tr></thead><tbody id="pVariantRows"></tbody></table></div>' +
+            '<button type="button" class="btn btn-sm" id="pAddVariant" style="margin-top:8px">+ Thêm biến thể</button></div>' +
           '<div class="form-group"><label class="form-label">Trạng thái</label>' +
             '<select class="form-select" id="pStatus">' +
               '<option value="active"' + (editing && editing.status === "active" ? " selected" : "") + '>Đang bán</option>' +
@@ -149,6 +169,23 @@
         '<button class="btn" data-close>Hủy</button>' +
         '<button class="btn btn-primary" id="saveProductBtn">' + (editing ? "Lưu thay đổi" : "Thêm sản phẩm") + "</button>",
       onOpen(api) {
+        const rowsBox = api.el.querySelector("#pVariantRows");
+
+        function addVariantRow(v) {
+          const row = document.createElement("tr");
+          row.setAttribute("data-variant-id", v && v.id ? String(v.id) : "");
+          row.innerHTML =
+            '<td><input class="form-control pv-name" placeholder="Ví dụ: 256GB / Đen" value="' + OF.escapeHtml(v && v.name ? v.name : "") + '" /></td>' +
+            '<td><input class="form-control pv-sku" placeholder="Tùy chọn" value="' + OF.escapeHtml(v && v.sku ? v.sku : "") + '" /></td>' +
+            '<td><input class="form-control pv-price" type="number" min="1" step="1000" value="' + (v && v.price != null ? v.price : "") + '" /></td>' +
+            '<td><input class="form-control pv-stock" type="number" min="0" step="1" value="' + (v && v.stock != null ? v.stock : 0) + '" /></td>' +
+            '<td><button type="button" class="btn btn-sm btn-icon" data-rm-variant title="Bỏ" style="color:var(--danger)">' + OF.icon("trash", "icon-sm") + "</button></td>";
+          row.querySelector("[data-rm-variant]").addEventListener("click", () => row.remove());
+          rowsBox.appendChild(row);
+        }
+
+        (editing && editing.variant_rows ? editing.variant_rows : []).forEach(addVariantRow);
+        api.el.querySelector("#pAddVariant").addEventListener("click", () => addVariantRow(null));
         api.el.querySelector("#saveProductBtn").addEventListener("click", () => saveForm(api, editing));
       },
     });
@@ -177,12 +214,30 @@
     const price = Number(document.getElementById("pPrice").value);
     const stock = Number(document.getElementById("pStock").value);
     const variants = document.getElementById("pVariants").value.trim();
+    const images = document.getElementById("pImages").value.trim();
+    const description = document.getElementById("pDescription").value.trim();
+    const specs = document.getElementById("pSpecs").value.trim();
     const emoji = document.getElementById("pEmoji").value;
     const status = document.getElementById("pStatus").value;
+    const variantRows = [];
+    document.querySelectorAll("#pVariantRows tr").forEach((row) => {
+      const name = row.querySelector(".pv-name").value.trim();
+      if (!name) return;
+      const priceRaw = row.querySelector(".pv-price").value;
+      const variantId = Number(row.getAttribute("data-variant-id")) || 0;
+      variantRows.push({
+        id: variantId > 0 ? variantId : null,
+        name,
+        sku: row.querySelector(".pv-sku").value.trim(),
+        price: priceRaw === "" ? null : Number(priceRaw),
+        stock: Number(row.querySelector(".pv-stock").value) || 0,
+      });
+    });
 
     let ok = true;
     setErr("pName", null); setErr("pSku", null); setErr("pCategory", null);
-    setErr("pPrice", null); setErr("pStock", null);
+    setErr("pPrice", null); setErr("pStock", null); setErr("pImages", null);
+    setErr("pDescription", null); setErr("pSpecs", null);
     if (name.length < 2) { setErr("pName", "Tên sản phẩm phải có ít nhất 2 ký tự."); ok = false; }
     if (!sku) { setErr("pSku", "Vui lòng nhập mã sản phẩm."); ok = false; }
     if (!cat) { setErr("pCategory", "Hãy chọn danh mục."); ok = false; }
@@ -191,7 +246,8 @@
     if (!ok) return;
 
     const body = {
-      name, sku, category_id: Number(cat), price, stock, variants, emoji, status,
+      name, sku, category_id: Number(cat), price, stock, variants, emoji, images, description, specs, status,
+      variant_rows: variantRows,
     };
     const res = editing
       ? await OF.api.put("products/item.php?id=" + editing.id, body)
@@ -203,6 +259,9 @@
       else if (errs.category_id) setErr("pCategory", errs.category_id);
       else if (errs.price) setErr("pPrice", errs.price);
       else if (errs.stock) setErr("pStock", errs.stock);
+      else if (errs.images) setErr("pImages", errs.images);
+      else if (errs.description) setErr("pDescription", errs.description);
+      else if (errs.specs) setErr("pSpecs", errs.specs);
       else OF.ui.toast("error", res.message || "Lưu sản phẩm thất bại.");
       return;
     }
@@ -229,6 +288,8 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    const urlCat = new URLSearchParams(window.location.search).get("category_id");
+    if (urlCat) categoryId = urlCat;
     loadCategories();
     loadProducts();
 

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Giỏ hàng – Shopee</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <aside id="app-sidebar" class="sidebar"></aside>
+    <div class="main">
+      <header id="app-topbar" class="topbar"></header>
+      <main class="content">
+        <div class="page-head">
+          <div>
+            <h1>Giỏ hàng</h1>
+            <p class="page-sub">Chọn sản phẩm, điều chỉnh số lượng, sau đó tạo đơn hàng.</p>
+          </div>
+        </div>
+
+        <div class="alert-banner alert-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 12"/></svg>
+          <div>
+            <strong>Giỏ hàng còn-active trong 30 phút</strong>
+            <p>Sau khi tạo đơn, hàng sẽ được giữ (reservation) trong 30 phút. Nếu chưa thanh toán xác nhận, đơn sẽ hết hạn và hàng sẽ được giải phóng.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body flush">
+            <div id="cartEmpty" style="display:none;text-align:center;padding:30px">
+              <p class="muted">Giỏ hàng đang trống.</p>
+              <a class="btn btn-primary" href="index.html">Mua sắm ngay</a>
+            </div>
+            <div id="cartList" style="display:none">
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Sản phẩm</th>
+                      <th class="text-right">Đơn giá</th>
+                      <th class="text-right">Số lượng</th>
+                      <th class="text-right">Thành tiền</th>
+                      <th class="text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="cartTableBody"></tbody>
+                </table>
+              </div>
+              <div class="order-total-row" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+                <span>Tổng giỏ hàng:</span><strong id="cartTotal">0 ₫</strong>
+              </div>
+              <div id="checkoutInfo" style="margin-top:16px;display:none;grid-template-columns:220px 1fr;gap:10px 14px;align-items:center">
+                <label for="inpPhone" style="font-weight:600">Số điện thoại người nhận <span style="color:#e03f00">*</span></label>
+                <input id="inpPhone" class="form-input" inputmode="tel" placeholder="VD: 0912345678" style="max-width:320px" />
+                <label for="inpAddress" style="font-weight:600">Địa chỉ giao hàng <span style="color:#e03f00">*</span></label>
+                <input id="inpAddress" class="form-input" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành" />
+                <label style="font-weight:600">Người nhận</label>
+                <input id="inpName" class="form-input" placeholder="Tên người nhận" style="max-width:320px" />
+              </div>
+              <div style="margin-top:16px;display:flex;gap:10px">
+                <button class="btn btn-primary" id="btnCheckoutFromCart">Tạo đơn hàng từ giỏ</button>
+                <a class="btn" href="index.html">Tiếp tục mua sắm</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root"></div>
+
+  <script src="assets/js/data.js?v=2"></script>
+  <script src="assets/js/api.js?v=2"></script>
+  <script src="assets/js/app.js?v=2"></script>
+  <script src="assets/js/pages/cart.js?v=3"></script>
+</body>
+</html>

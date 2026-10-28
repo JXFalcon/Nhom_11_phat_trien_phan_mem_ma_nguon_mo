@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Quản lý đơn hàng – OrderFlow</title>
+  <title>Quản lý đơn hàng – Shopee</title>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -26,7 +26,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.2v.2"/></svg>
           <div>
             <strong>Đã kết nối backend PHP + MySQL</strong>
-            <p>Tạo đơn có transaction: kiểm tra &amp; trừ tồn kho thật, chặn tranh hàng, hoàn kho khi hủy — đúng yêu cầu kỹ thuật 1 của đề tài.</p>
+            <p>Tạo đơn có transaction: kiểm tra &amp; trừ tồn kho thật, chặn tranh hàng, hoàn kho khi hủy. Đơn chờ xác nhận được giữ 30 phút; sau khi hết hạn, admin/staff có thể bấm đồng hồ để hủy và hoàn kho (yêu cầu kỹ thuật 1 của đề tài).</p>
           </div>
         </div>
 
@@ -79,10 +79,10 @@
   <div id="modal-root"></div>
   <div id="toast-root" class="toast-root"></div>
 
-  <script src="assets/js/data.js"></script>
+  <script src="assets/js/data.js?v=2"></script>
 
-  <script src="assets/js/api.js"></script>
-  <script src="assets/js/app.js"></script>
-  <script src="assets/js/pages/orders.js"></script>
+  <script src="assets/js/api.js?v=2"></script>
+  <script src="assets/js/app.js?v=2"></script>
+  <script src="assets/js/pages/orders.js?v=3"></script>
 </body>
 </html>

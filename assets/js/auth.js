@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – auth.js (trang đăng nhập / đăng ký)
+   Shopee – auth.js (trang đăng nhập / đăng ký)
    Giai đoạn 2: gọi API backend PHP (api/auth/*).
    ============================================================ */
 (function () {
@@ -57,11 +57,20 @@
   }
 
   /* ================= TRANG ĐĂNG NHẬP ================= */
+  // Xác định trang đích sau đăng nhập: ưu tiên ?redirect=<ten>.html (chỉ nhận
+  // tên file .html an toàn), mặc định luôn luôn là trang chủ.
+  function resolveLanding() {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = (params.get("redirect") || "").trim();
+    if (/^[a-z][a-z0-9_]*\.html$/i.test(redirect)) return redirect;
+    return "index.html";
+  }
+
   function initLogin() {
-    // Nếu đã có token thì vào thẳng trang theo vai trò
+    // Nếu đã có token thì vào thẳng trang đích (mặc định là trang chủ,
+    // tối đa 1 lần tránh ping-pong khi token cũ còn sót trong localStorage)
     if (OF.session.getToken()) {
-      const role = (OF.session.getUser() || {}).role || "customer";
-      window.location.replace(role === "customer" ? "orders.html" : "index.html");
+      window.location.replace(resolveLanding());
       return;
     }
     const form = document.getElementById("loginForm");
@@ -70,6 +79,13 @@
     const password = document.getElementById("loginPassword");
     const alertBox = document.getElementById("loginAlert");
     const remember = document.getElementById("loginRemember");
+
+    // Hiện lý do bị đưa về trang đăng nhập (nếu có), rồi xóa ghi chú
+    const authInfo = sessionStorage.getItem("orderflow.authInfo");
+    if (authInfo) {
+      sessionStorage.removeItem("orderflow.authInfo");
+      showAlert(alertBox, "error", authInfo);
+    }
 
     togglePassword(document.getElementById("toggleLoginPw"), password);
     bindLiveClear(form);
@@ -113,15 +129,8 @@
       OF.session.setUser(res.data.user);
       if (remember && remember.checked) localStorage.setItem("orderflow.remember", "1");
       else localStorage.removeItem("orderflow.remember");
-      const role = (res.data.user || {}).role || "customer";
-      const landing = role === "customer" ? "orders.html" : "index.html";
-      showAlert(
-        alertBox,
-        "success",
-        role === "customer"
-          ? "Đăng nhập thành công! Đang chuyển tới trang đơn hàng…"
-          : "Đăng nhập thành công! Đang chuyển tới trang quản trị…"
-      );
+      const landing = resolveLanding();
+      showAlert(alertBox, "success", "Đăng nhập thành công! Đang quay về trang chủ…");
       setTimeout(() => { window.location.href = landing; }, 500);
     });
   }

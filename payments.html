@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Quản lý thanh toán – OrderFlow</title>
+  <title>Quản lý thanh toán – Shopee</title>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -23,7 +23,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>
           <div>
             <strong>Thanh toán chỉ là mô phỏng</strong>
-            <p>Không kết nối cổng thanh toán thật, không xử lý tiền thật. Giai đoạn sau: tiếp nhận webhook với idempotency key – gửi lại không tăng/tiền không đổi lần thứ hai (yêu cầu kỹ thuật 1 &amp; 2 của đề tài).</p>
+            <p>Không kết nối cổng thanh toán thật, không xử lý tiền thật. Giai đoạn sau: tiếp nhận webhook với idempotency key – gửi lại không tăng/tiền không đổi lần thứ hai (yêu cầu kỹ thuật 1 &amp; 2). Thanh toán đến sau khi đơn hết hạn giữ hàng không kích hoạt đơn và không cấp hàng (yêu cầu 5).</p>
           </div>
         </div>
 
@@ -75,10 +75,10 @@
   <div id="modal-root"></div>
   <div id="toast-root" class="toast-root"></div>
 
-  <script src="assets/js/data.js"></script>
+  <script src="assets/js/data.js?v=2"></script>
 
-  <script src="assets/js/api.js"></script>
-  <script src="assets/js/app.js"></script>
-  <script src="assets/js/pages/payments.js"></script>
+  <script src="assets/js/api.js?v=2"></script>
+  <script src="assets/js/app.js?v=2"></script>
+  <script src="assets/js/pages/payments.js?v=2"></script>
 </body>
 </html>
