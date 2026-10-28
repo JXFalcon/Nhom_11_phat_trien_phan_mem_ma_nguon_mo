@@ -2,125 +2,112 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Đăng nhập – OrderFlow</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập – Shopee.vn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            shopee: { orange: '#FF4D00', orangeDark: '#E03F00', light: '#FFF6F0', grayBg: '#F5F5F5' },
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #F5F5F5; }
+    .bg-shopee-orange { background-color: #FF4D00; }
+    .text-shopee { color: #FF4D00; }
+    .hover\:bg-shopee-orange:hover { background-color: #FF4D00; }
+    .form-control.is-invalid { border-color: #ef4444 !important; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15); }
+    .form-error { display: none; color: #ef4444; font-size: 12px; margin-top: 4px; }
+    .form-error.show { display: block; }
+    #loginAlert { display: none; }
+    #loginAlert.show { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 16px; }
+    #loginAlert.error { background: #fee2e2; color: #b91c1c; padding: 10px 12px; border-radius: 10px; font-size: 13px; }
+    #loginAlert.success { background: #dcfce7; color: #15803d; padding: 10px 12px; border-radius: 10px; font-size: 13px; }
+    #loginAlert svg { width: 18px; height: 18px; margin-top: 1px; flex: none; }
+  </style>
 </head>
-<body>
-  <div class="auth-page">
-    <!-- Cột hình ảnh / thương hiệu -->
-    <aside class="auth-visual">
-      <div class="auth-brand">
-        <div class="brand-logo">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/><path d="m8.5 16 2 2 4-4.5"/>
-          </svg>
+<body class="text-gray-900 antialiased min-h-screen">
+
+  <div class="min-h-screen flex items-center justify-center bg-shopee-light py-10 px-4">
+    <div class="w-full max-w-md">
+      <div class="flex items-center justify-center gap-2 mb-6">
+        <div class="bg-shopee-orange text-white p-2 rounded-lg">
+          <i class="fa-solid fa-bag-shopping text-lg"></i>
         </div>
-        <div class="brand-text">
-          <span class="brand-name">OrderFlow</span>
-          <span class="brand-sub">Quản lý đơn hàng &amp; đổi trả</span>
-        </div>
+        <span class="font-bold text-2xl tracking-tight text-shopee">SHOPEE<span class="text-gray-900">.vn</span></span>
       </div>
 
-      <div class="auth-visual-body">
-        <h2>Quản lý bán hàng trực tuyến<br />hiện đại &amp; minh bạch</h2>
-        <p>Theo dõi đơn hàng, giữ hàng, thanh toán mô phỏng và xử lý đổi trả – tất cả trên một giao diện quản trị thống nhất.</p>
-        <div class="auth-feature-list">
-          <div class="auth-feature">
-            <span class="auth-feature-icon">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8A.8.8 0 0 1 9.8 2h4.4a.8.8 0 0 1 .8.8V4"/><path d="M9 10h6M9 14h4"/>
-              </svg>
-            </span>
-            Vòng đời đơn hàng: giữ hàng → xác nhận → giao
-          </div>
-          <div class="auth-feature">
-            <span class="auth-feature-icon">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/>
-              </svg>
-            </span>
-            Thanh toán mô phỏng, chống xử lý trùng
-          </div>
-          <div class="auth-feature">
-            <span class="auth-feature-icon">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9.5 15 5 10.5 9.5 6"/><path d="M5 10.5h9a5.5 5.5 0 0 1 0 11h-2.5"/>
-              </svg>
-            </span>
-            Trả hàng một phần, đối chiếu số lượng &amp; tiền
-          </div>
-        </div>
-      </div>
+      <div class="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+        <h1 class="text-2xl font-bold text-gray-900">Đăng nhập</h1>
+        <p class="text-sm text-gray-500 mt-1 mb-5">Mua sắm online trên nền tảng Shopee.vn – dữ liệu đồng bộ MySQL.</p>
 
-      <div class="auth-visual-footer">Bài tập lớn – Đề tài 19 · Backend PHP + MySQL</div>
-    </aside>
-
-    <!-- Cột form -->
-    <main class="auth-form-side">
-      <div class="auth-card">
-        <h1>Đăng nhập</h1>
-        <p class="auth-card-lead">Chào mừng bạn quay lại OrderFlow. Vui lòng nhập thông tin tài khoản.</p>
-
-        <div class="auth-demo-box" id="demoBox">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.2v.2"/>
-          </svg>
+        <div class="flex items-start gap-2.5 bg-shopee-light border border-orange-100 rounded-xl p-3 mb-5 text-xs text-gray-600">
+          <i class="fa-solid fa-bolt text-shopee mt-0.5"></i>
           <div>
-            <strong>Tài khoản demo</strong><br />
-            <code>admin@orderflow.vn</code> / <code>123456</code><br />
-            <code>nhanvien@orderflow.vn</code> · <code>khachhang@orderflow.vn</code> (cùng mật khẩu)<br />
-            <button type="button" data-fill-account="admin@orderflow.vn" data-fill-pw="123456">Điền nhanh tài khoản admin →</button>
+            <strong>Tài khoản demo</strong> (mật khẩu chung <code class="bg-white px-1 py-0.5 rounded">123456</code>):<br />
+            <code>admin@orderflow.vn</code> – quản trị, <code>nhanvien@orderflow.vn</code> – nhân viên, <code>khachhang@orderflow.vn</code> – khách hàng
           </div>
         </div>
+        <button type="button" data-fill-account="admin@orderflow.vn" data-fill-pw="123456"
+          class="mb-1 text-xs font-semibold text-shopee hover:underline">Điền nhanh tài khoản admin →</button>
 
-        <div class="auth-alert" id="loginAlert" role="alert"></div>
+        <div id="loginAlert" role="alert"></div>
 
-        <form id="loginForm" class="auth-form" novalidate>
-          <div class="form-group">
-            <label class="form-label" for="loginEmail">Email <span class="req">*</span></label>
-            <div class="input-icon-wrap">
-              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5c1-4 4-6 7.5-6s6.5 2 7.5 6"/>
-              </svg>
-              <input type="email" id="loginEmail" class="form-control" placeholder="admin@orderflow.vn" autocomplete="username" />
-            </div>
+        <form id="loginForm" novalidate>
+          <div class="mb-4">
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="loginEmail">Email <span class="text-red-500">*</span></label>
+            <input type="email" id="loginEmail" class="form-control w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-shopee" placeholder="admin@orderflow.vn" autocomplete="username" />
             <div class="form-error" data-error-for="loginEmail"></div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="loginPassword">Mật khẩu <span class="req">*</span></label>
-            <div class="input-icon-wrap">
-              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>
-              </svg>
-              <input type="password" id="loginPassword" class="form-control has-icon-btn" placeholder="Nhập mật khẩu" autocomplete="current-password" />
-              <button type="button" class="input-icon-btn" id="toggleLoginPw" aria-label="Hiện mật khẩu">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>
-                </svg>
+          <div class="mb-4">
+            <label class="block text-xs font-medium text-gray-700 mb-1" for="loginPassword">Mật khẩu <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <input type="password" id="loginPassword" class="form-control w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-shopee" placeholder="Nhập mật khẩu" autocomplete="current-password" />
+              <button type="button" id="toggleLoginPw" aria-label="Hiện mật khẩu" class="absolute right-3 top-2.5 text-gray-400 hover:text-shopee">
+                <i class="fa-regular fa-eye"></i>
               </button>
             </div>
             <div class="form-error" data-error-for="loginPassword"></div>
           </div>
 
-          <div class="auth-row">
-            <label class="form-check"><input type="checkbox" id="loginRemember" /> Ghi nhớ đăng nhập</label>
-            <a href="#" onclick="event.preventDefault(); alert('Chức năng quên mật khẩu chưa hỗ trợ. Hãy dùng email đăng ký thật hoặc tài khoản demo.');">Quên mật khẩu?</a>
+          <div class="flex items-center justify-between mb-5">
+            <label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+              <input type="checkbox" id="loginRemember" class="w-4 h-4 accent-orange-500" /> Ghi nhớ đăng nhập
+            </label>
+            <a href="#" onclick="event.preventDefault(); alert('Chức năng quên mật khẩu chưa hỗ trợ. Hãy dùng tài khoản demo: admin@orderflow.vn / 123456.');" class="text-xs text-shopee font-medium hover:underline">Quên mật khẩu?</a>
           </div>
 
-          <button type="submit" class="btn btn-primary auth-submit">Đăng nhập</button>
+          <button type="submit" class="w-full bg-shopee-orange text-white py-3 rounded-lg font-semibold hover:bg-shopee-orangeDark transition shadow-lg active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">Đăng nhập</button>
         </form>
 
-        <p class="auth-alt">Chưa có tài khoản? <a href="register.html">Đăng ký ngay</a></p>
+        <div class="flex items-center my-5">
+          <div class="flex-1 border-t border-gray-200"></div>
+          <span class="px-3 text-xs text-gray-400">hoặc tiếp tục bằng</span>
+          <div class="flex-1 border-t border-gray-200"></div>
+        </div>
+        <div class="flex gap-3">
+          <button type="button" class="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg flex items-center justify-center gap-2 text-xs hover:bg-gray-50 transition"><i class="fa-brands fa-facebook-f text-blue-600"></i> Facebook</button>
+          <button type="button" class="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg flex items-center justify-center gap-2 text-xs hover:bg-gray-50 transition"><i class="fa-brands fa-google text-red-500"></i> Google</button>
+        </div>
       </div>
-    </main>
+
+      <p class="text-center text-sm text-gray-600 mt-5">Chưa có tài khoản? <a href="register.html" class="text-shopee font-semibold hover:underline">Đăng ký ngay</a></p>
+      <p class="text-center text-xs text-gray-400 mt-2"><a href="index.html" class="hover:text-shopee">← Về trang chủ Shopee.vn</a></p>
+    </div>
   </div>
 
-  <script src="assets/js/data.js"></script>
-
-  <script src="assets/js/api.js"></script>
-  <script src="assets/js/app.js"></script>
-  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/data.js?v=2"></script>
+  <script src="assets/js/api.js?v=2"></script>
+  <script src="assets/js/app.js?v=2"></script>
+  <script src="assets/js/auth.js?v=2"></script>
 </body>
 </html>

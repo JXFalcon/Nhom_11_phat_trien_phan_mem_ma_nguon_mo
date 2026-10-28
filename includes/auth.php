@@ -1,6 +1,6 @@
 <?php
 /**
- * OrderFlow – Hàm nghiệp vụ xác thực dùng chung.
+ * Shopee – Hàm nghiệp vụ xác thực dùng chung.
  */
 declare(strict_types=1);
 

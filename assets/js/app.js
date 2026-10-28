@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – app.js
+   Shopee – app.js
    Bố cục dùng chung: sidebar, topbar, bảo vệ trang, modal,
    toast, phân trang, biểu đồ SVG.
    Các trang gọi dữ liệu thật qua assets/js/api.js → /api/*.php.
@@ -32,6 +32,7 @@
     alert: '<path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.4v.2"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.2v.2"/>',
     calendar: '<rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 12"/>',
     money: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5c-.6-1-1.7-1.5-3-1.5-1.8 0-3 1-3 2.3 0 3 6 1.5 6 4.4 0 1.4-1.3 2.3-3 2.3-1.4 0-2.6-.6-3.2-1.6"/>',
     chevDown: '<path d="m6 9.5 6 6 6-6"/>',
     chevLeft: '<path d="m14.5 6-6 6 6 6"/>',
@@ -55,12 +56,21 @@
   OF.icon = icon;
 
   /* ================= Cấu hình điều hướng ================= */
-  /* Trang giới hạn vai trò: khách hàng (customer) không được mở. */
+  /* Trang giới hạn vai trò: khách hàng (customer) chỉ quản lý thứ của mình –
+   * đơn, giỏ của họ; Đổi trả và Thanh toán cho phép (API tự lọc theo user_id,
+   * nút xử lý nội bộ bị ẩn qua canManage()). Các trang quản trị còn lại chỉ
+   * admin/staff dùng. index.html là storefront công khai, không tải app.js. */
   const PAGE_ROLES = {
-    "index.html": ["admin", "staff"],
     "reports.html": ["admin", "staff"],
     "products.html": ["admin", "staff"],
     "categories.html": ["admin", "staff"],
+    "dashboard.html": ["admin", "staff"],
+    "shipments.html": ["admin", "staff"],
+    "reservations.html": ["admin", "staff"],
+    "orders.html": ["admin", "staff", "customer"],
+    "cart.html": ["admin", "staff", "customer"],
+    "returns.html": ["admin", "staff", "customer"],
+    "payments.html": ["admin", "staff", "customer"],
   };
 
   function allowedRoles(page) {
@@ -80,13 +90,17 @@
 
   /* Trang khách hàng được dùng sau khi đăng nhập */
   function homePageFor(role) {
-    return role === "customer" ? "orders.html" : "index.html";
+    return role === "customer" ? "orders.html" : "dashboard.html";
   }
 
   const NAV = [
     {
+      title: "Trang chủ",
+      items: [{ href: "index.html", icon: "store", label: "Trang chủ thương mại" }],
+    },
+    {
       title: "Tổng quan",
-      items: [{ href: "index.html", icon: "home", label: "Dashboard" }],
+      items: [{ href: "dashboard.html", icon: "home", label: "Dashboard" }],
     },
     {
       title: "Sản phẩm",
@@ -98,10 +112,12 @@
     {
       title: "Đơn hàng",
       items: [
-        { href: "orders.html", icon: "clipboard", label: "Quản lý đơn hàng" },
-        { href: "returns.html", icon: "ret", label: "Quản lý đổi trả" },
+        { href: "orders.html", icon: "clipboard", label: "Quản lý đơn hàng", customerLabel: "Đơn hàng của tôi" },
+        { href: "returns.html", icon: "ret", label: "Quản lý đổi trả", customerLabel: "Đổi trả của tôi" },
         { href: "shipments.html", icon: "truck", label: "Quản lý giao hàng" },
-        { href: "payments.html", icon: "card", label: "Quản lý thanh toán" },
+        { href: "payments.html", icon: "card", label: "Quản lý thanh toán", customerLabel: "Thanh toán của tôi" },
+        { href: "cart.html", icon: "box", label: "Giỏ hàng của tôi" },
+        { href: "reservations.html", icon: "box", label: "Quản lý giữ hàng" },
       ],
     },
     {
@@ -119,10 +135,12 @@
   function pageTitleFor(file) {
     for (const g of NAV) {
       for (const it of g.items) {
-        if (it.href === file) return it.label;
+        if (it.href === file) {
+          return currentRole() === "customer" && it.customerLabel ? it.customerLabel : it.label;
+        }
       }
     }
-    return "OrderFlow";
+    return "Shopee";
   }
 
   function renderSidebar() {
@@ -133,7 +151,7 @@
       '<div class="sidebar-brand">' +
         '<div class="brand-logo">' + icon("packageCheck") + "</div>" +
         '<div class="brand-text">' +
-          '<span class="brand-name">OrderFlow</span>' +
+          '<span class="brand-name">Shopee</span>' +
           '<span class="brand-sub">Quản lý đơn hàng</span>' +
         "</div>" +
       "</div>" +
@@ -143,9 +161,16 @@
       if (!items.length) return;
       html += '<div class="nav-section"><div class="nav-section-title">' + g.title + "</div>";
       items.forEach((it) => {
-        const active = it.href === file ? " active" : "";
-        html += '<a class="nav-link' + active + '" href="' + it.href + '">' +
-          icon(it.icon) + "<span>" + it.label + "</span></a>";
+        const isCurrent = it.href === file;
+        const label = currentRole() === "customer" && it.customerLabel ? it.customerLabel : it.label;
+        // Trang đang mở: render thành nhãn không điều hướng (bấm không nhảy đi đâu)
+        if (isCurrent) {
+          html += '<span class="nav-link active" aria-current="page">' +
+            icon(it.icon) + "<span>" + label + "</span></span>";
+        } else {
+          html += '<a class="nav-link" href="' + it.href + '">' +
+            icon(it.icon) + "<span>" + label + "</span></a>";
+        }
       });
       html += "</div>";
     });
@@ -191,7 +216,7 @@
         "</button>" +
         '<div class="user-menu hidden" id="userMenu">' +
           '<a class="user-menu-item" href="' + homePageFor(u.role) + '">' + icon(u.role === "customer" ? "clipboard" : "home") +
-            (u.role === "customer" ? "Đơn hàng của tôi" : "Trang tổng quan") + "</a>" +
+            (u.role === "customer" ? "Đơn hàng của tôi" : "Dashboard quản trị") + "</a>" +
           '<div class="user-menu-divider"></div>' +
           '<button class="user-menu-item danger" id="logoutBtn">' + icon("logout") + "Đăng xuất</button>" +
         "</div>";
@@ -371,7 +396,7 @@
   }
 
   /* ================= Biểu đồ SVG ================= */
-  const CHART_COLORS = ["#4f46e5", "#0ea5e9", "#16a34a", "#f59e0b", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"];
+  const CHART_COLORS = ["#ff4d00", "#0ea5e9", "#16a34a", "#f59e0b", "#ef4444", "#7c3aed", "#14b8a6", "#f97316"];
 
   function barChart(el, data, opts) {
     // data: [{label, value}]

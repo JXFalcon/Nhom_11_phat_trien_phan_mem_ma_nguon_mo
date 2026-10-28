@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – returns.js (Quản lý đổi trả)
+   Shopee – returns.js (Quản lý đổi trả)
    Giai đoạn 2: API MySQL — validate số lượng tại server,
    hoàn tiền + nhập kho bằng transaction khi hoàn tất.
    ============================================================ */
@@ -19,8 +19,15 @@
     cho_xu_ly: ["da_chap_nhan", "tu_choi"],
     da_chap_nhan: ["da_hoan_tat", "tu_choi"],
     tu_choi: [],
-    da_hoan_tat: [],
+    da_hoan_tat: ["da_hoan_tat"],
   };
+
+  function refundOf(r) {
+    if (Array.isArray(r.items) && r.items.length) {
+      return r.items.reduce((sum, it) => sum + Number(it.refund_amount || 0), 0);
+    }
+    return Number(r.refund_total || 0);
+  }
 
   async function loadReturns() {
     const q = new URLSearchParams();
@@ -47,7 +54,7 @@
     }
 
     tbody.innerHTML = rows.map((r) => {
-      const refund = r.status === "da_hoan_tat" ? r.refund_total : (r.status === "da_chap_nhan" ? Number(r.qty_accepted_total || 0) * Number(r.unit_price || 0) : 0);
+      const refund = r.status === "da_hoan_tat" || r.status === "da_chap_nhan" ? refundOf(r) : 0;
       return "<tr>" +
         '<td><span class="order-id-link" data-view="' + r.id + '">' + OF.escapeHtml(r.return_code) + "</span></td>" +
         '<td><span class="order-id-link" data-order="' + r.order_id + '">' + OF.escapeHtml(r.order_code) + "</span></td>" +
@@ -98,6 +105,15 @@
         '<div class="detail-item"><label>Sản phẩm</label><span>' + OF.escapeHtml(r.product_name || "—") + "</span></div>" +
         '<div class="detail-item"><label>Đơn giá đã chốt</label><span>' + OF.fmt.money(r.unit_price || 0) + "</span></div>" +
       "</div>" +
+      (Array.isArray(r.items) && r.items.length
+        ? '<table class="order-items-table" style="margin-top:14px"><thead><tr><th>Sản phẩm</th><th class="text-right">Đã giao</th><th class="text-right">Yêu cầu</th><th class="text-right">Chấp nhận</th><th class="text-right">Hoàn</th></tr></thead><tbody>' +
+            r.items.map((it) => "<tr><td>" + OF.escapeHtml(it.product_name) + (it.variant ? ' <span class="text-2">(' + OF.escapeHtml(it.variant) + ")</span>" : "") +
+              '</td><td class="text-right">' + Number(it.quantity_delivered || 0) +
+              '</td><td class="text-right">' + Number(it.quantity_requested || 0) +
+              '</td><td class="text-right">' + Number(it.quantity_accepted || 0) +
+              '</td><td class="text-right">' + OF.fmt.money(it.refund_amount || 0) + "</td></tr>").join("") +
+          "</tbody></table>"
+        : "") +
       '<div class="qty-boxes">' +
         '<div class="qty-box"><div class="qty-num">' + delivered + '</div><div class="qty-lbl">SL ĐÃ GIAO</div></div>' +
         '<div class="qty-box warn"><div class="qty-num">' + requested + '</div><div class="qty-lbl">SL YÊU CẦU TRẢ</div></div>' +
@@ -107,7 +123,7 @@
       '<p class="text-2">' + OF.escapeHtml(r.reason) + "</p></div>" +
       '<div class="alert-banner alert-info" style="margin-bottom:0">' +
         OF.icon("info") +
-        "<div><strong>Tiền hoàn (server tính): " + OF.fmt.money(r.refund_total) + "</strong>" +
+        "<div><strong>Tiền hoàn (server tính): " + OF.fmt.money(refundOf(r)) + "</strong>" +
         "<p>Số lượng chấp nhận × đơn giá snapshot trong đơn. " +
         (r.status === "da_hoan_tat" ? "Đã hoàn tất: tồn kho đã được nhập lại (transaction)." :
           r.status === "da_chap_nhan" ? "Chấp nhận một phần: chờ hoàn tất để hoàn tiền & nhập kho." :
@@ -159,8 +175,28 @@
       OF.ui.toast("info", "Yêu cầu ở trạng thái “" + OF.RETURN_STATUS[r.status].label + "” không còn bước tiếp theo.");
       return;
     }
-    const opts = nexts.map((s) => '<option value="' + s + '">' + OF.RETURN_STATUS[s].label + "</option>").join("");
+    const opts = nexts.map((s) =>
+      '<option value="' + s + '">' + (s === r.status ? "Điều chỉnh số lượng đã chấp nhận" : OF.RETURN_STATUS[s].label) + "</option>"
+    ).join("");
     const requested = Number(r.qty_requested_total || r.qty_requested || 0);
+    const acceptedNow = Number(r.qty_accepted_total || 0);
+    const accDefault = acceptedNow > 0 ? acceptedNow : requested;
+    const lines = Array.isArray(r.items) ? r.items : [];
+    const accInputs = lines.length
+      ? lines.map((it) => {
+          const cur = Number(it.quantity_accepted || 0);
+          const max = Number(it.quantity_requested || 0);
+          const def = cur > 0 ? cur : max;
+          return '<div class="acc-line" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border,#eee)">' +
+            '<div style="flex:1;min-width:0"><div style="font-weight:500">' +
+              OF.escapeHtml(it.product_name) + (it.variant ? ' <span class="text-2">(' + OF.escapeHtml(it.variant) + ")</span>" : "") +
+            '</div><div class="text-2" style="font-size:12px">Đã giao ' + Number(it.quantity_delivered || 0) +
+              " · Yêu cầu trả " + max + "</div></div>" +
+            '<input class="form-control acc-qty" data-rid="' + it.id + '" type="number" min="0" max="' + max +
+              '" value="' + def + '" style="width:90px" />' +
+          "</div>";
+        }).join("")
+      : '<input class="form-control" id="accQty" type="number" min="0" max="' + requested + '" value="' + accDefault + '" />';
     OF.ui.openModal({
       title: "Cập nhật yêu cầu " + r.return_code,
       body:
@@ -172,8 +208,8 @@
         "</div>" +
         '<div class="form-group"><label class="form-label">Chuyển sang</label><select class="form-select" id="newStatus">' + opts + "</select></div>" +
         '<div class="form-group" id="accQtyGroup" style="display:none">' +
-          '<label class="form-label">Số lượng chấp nhận trả</label>' +
-          '<input class="form-control" id="accQty" type="number" min="1" max="' + requested + '" value="' + requested + '" />' +
+          '<label class="form-label">Số lượng chấp nhận trả theo từng sản phẩm</label>' +
+          accInputs +
           '<div class="form-hint">Server chặn vượt số lượng còn trả được; tiền hoàn = SL chấp nhận × đơn giá trong đơn.</div></div>' +
         '<div class="form-group"><label class="form-label">Ghi chú (không bắt buộc)</label>' +
         '<input class="form-control" id="statusNote" placeholder="Ví dụ: Khách gửi hàng lỗi, đã kiểm tra" /></div>',
@@ -184,6 +220,10 @@
         const sel = api.el.querySelector("#newStatus");
         const accGroup = api.el.querySelector("#accQtyGroup");
         const syncAcc = () => { accGroup.style.display = (sel.value === "da_chap_nhan" || sel.value === "da_hoan_tat") ? "" : "none"; };
+        if (r.status === "da_hoan_tat") {
+          sel.value = "da_hoan_tat";
+          accGroup.style.display = "";
+        }
         sel.addEventListener("change", syncAcc);
         syncAcc();
 
@@ -192,7 +232,16 @@
           const note = api.el.querySelector("#statusNote").value.trim();
           const body = { id: r.id, to_status: ns, note };
           if (ns === "da_chap_nhan" || ns === "da_hoan_tat") {
-            body.quantity_accepted = Number(api.el.querySelector("#accQty").value) || 0;
+            const inputs = Array.from(api.el.querySelectorAll(".acc-qty"));
+            if (inputs.length) {
+              body.items = inputs.map((el) => ({
+                return_item_id: Number(el.getAttribute("data-rid")),
+                quantity_accepted: Number(el.value) || 0,
+              }));
+            } else {
+              const legacy = api.el.querySelector("#accQty");
+              body.quantity_accepted = Number(legacy ? legacy.value : 0) || 0;
+            }
           }
           const res = await OF.api.patch("returns/status.php", body);
           if (!res.success) { OF.ui.toast("error", res.message || "Cập nhật thất bại."); return; }
@@ -227,17 +276,13 @@
           '<div class="form-group"><label class="form-label">Đơn hàng (chỉ chọn đơn đã giao) <span class="req">*</span></label>' +
             '<select class="form-select" id="rOrder"><option value="">— Chọn đơn —</option>' + orderOpts + "</select>" +
             '<div class="form-error" data-error-for="rOrder"></div></div>' +
-          '<div class="form-group"><label class="form-label">Sản phẩm trong đơn <span class="req">*</span></label>' +
-            '<select class="form-select" id="rProduct"><option value="">— Chọn đơn trước —</option></select>' +
-            '<div class="form-error" data-error-for="rProduct"></div></div>' +
-          '<div class="form-row">' +
-            '<div class="form-group"><label class="form-label">Số lượng yêu cầu trả <span class="req">*</span></label>' +
-              '<input type="number" id="rQty" class="form-control" min="1" step="1" value="1" />' +
-              '<div class="form-error" data-error-for="rQty"></div>' +
-              '<div class="form-hint" id="rQtyHint"></div></div>' +
-            '<div class="form-group"><label class="form-label">Tiền hoàn dự kiến</label>' +
-              '<input class="form-control" id="rRefundPreview" disabled value="0 ₫" /></div>' +
-          "</div>" +
+          '<div class="form-group"><label class="form-label">Sản phẩm cần trả <span class="req">*</span></label>' +
+            '<div id="rItems" class="form-control" style="height:auto;min-height:44px;padding:4px 10px">' +
+              '<span class="text-2">— Chọn đơn trước —</span></div>' +
+            '<div class="form-error" data-error-for="rItems"></div>' +
+            '<div class="form-hint">Có thể chọn nhiều sản phẩm trong cùng một yêu cầu. Server tự chặn vượt số còn lại.</div></div>' +
+          '<div class="form-group"><label class="form-label">Tiền hoàn dự kiến</label>' +
+            '<input class="form-control" id="rRefundPreview" disabled value="0 ₫" /></div>' +
           '<div class="form-group"><label class="form-label">Lý do trả hàng <span class="req">*</span></label>' +
             '<textarea class="form-control" id="rReason" rows="3" placeholder="Mô tả lỗi/khuyết điểm của sản phẩm…"></textarea>' +
             '<div class="form-error" data-error-for="rReason"></div></div>' +
@@ -247,47 +292,79 @@
         '<button class="btn btn-primary" id="createReturnBtn">Tạo yêu cầu</button>',
       onOpen(api) {
         const orderSel = api.el.querySelector("#rOrder");
-        const prodSel = api.el.querySelector("#rProduct");
-        const qtyInput = api.el.querySelector("#rQty");
-        const hint = api.el.querySelector("#rQtyHint");
+        const itemsBox = api.el.querySelector("#rItems");
         const preview = api.el.querySelector("#rRefundPreview");
         let orderItems = [];
 
-        function currentItem() {
-          const idx = Number(prodSel.value);
-          return orderItems[idx] || null;
-        }
-        function updatePreview() {
-          const it = currentItem();
-          if (!it) { preview.value = "0 ₫"; hint.textContent = ""; return; }
-          hint.textContent = "Đã giao " + it.quantity + " (server tự chặn vượt phần còn lại)";
-          const q = Number(qtyInput.value) || 0;
-          preview.value = OF.fmt.money(q * Number(it.unit_price));
-        }
-        orderSel.addEventListener("change", async () => {
-          prodSel.innerHTML = '<option value="">Đang tải…</option>';
-          if (!orderSel.value) { prodSel.innerHTML = '<option value="">— Chọn đơn trước —</option>'; updatePreview(); return; }
-          const res = await OF.api.get("orders/item.php", "id=" + orderSel.value);
-          if (!res.success) { OF.ui.toast("error", res.message || "Không tải được sản phẩm trong đơn."); prodSel.innerHTML = ""; return; }
-          orderItems = res.data.items || [];
-          prodSel.innerHTML = orderItems.map((it, i) =>
-            '<option value="' + i + '">' + OF.escapeHtml(it.product_name) + (it.variant ? " (" + OF.escapeHtml(it.variant) + ")" : "") + "</option>"
+        function renderItems() {
+          if (!orderItems.length) {
+            itemsBox.innerHTML = '<span class="text-2">Đơn này không có sản phẩm.</span>';
+            updatePreview();
+            return;
+          }
+          itemsBox.innerHTML = orderItems.map((it, i) =>
+            '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border,#eee)">' +
+              '<input type="checkbox" class="r-check" data-idx="' + i + '"' + (i === 0 ? " checked" : "") + ">" +
+              '<span style="flex:1;min-width:0">' + OF.escapeHtml(it.product_name) +
+                (it.variant ? ' <span class="text-2">(' + OF.escapeHtml(it.variant) + ")</span>" : "") +
+                ' <span class="text-2">· đã giao ' + Number(it.quantity) + "</span></span>" +
+              '<input type="number" class="form-control r-qty" data-idx="' + i + '" min="1" max="' + Number(it.quantity) + '" value="1" style="width:82px" />' +
+            "</label>"
           ).join("");
+          itemsBox.querySelectorAll(".r-check, .r-qty").forEach((el) => {
+            el.addEventListener("change", updatePreview);
+            el.addEventListener("input", updatePreview);
+          });
           updatePreview();
+        }
+
+        function selectedItems() {
+          const out = [];
+          itemsBox.querySelectorAll(".r-check").forEach((chk) => {
+            if (!chk.checked) return;
+            const idx = Number(chk.getAttribute("data-idx"));
+            const it = orderItems[idx];
+            if (!it) return;
+            const qtyEl = itemsBox.querySelector('.r-qty[data-idx="' + idx + '"]');
+            out.push({ item: it, qty: Number(qtyEl ? qtyEl.value : 1) || 0 });
+          });
+          return out;
+        }
+
+        function updatePreview() {
+          const total = selectedItems().reduce((sum, x) => sum + x.qty * Number(x.item.unit_price || 0), 0);
+          preview.value = OF.fmt.money(total);
+        }
+
+        orderSel.addEventListener("change", async () => {
+          itemsBox.innerHTML = '<span class="text-2">Đang tải…</span>';
+          preview.value = "0 ₫";
+          if (!orderSel.value) { orderItems = []; itemsBox.innerHTML = '<span class="text-2">— Chọn đơn trước —</span>'; return; }
+          const res = await OF.api.get("orders/item.php", "id=" + orderSel.value);
+          if (!res.success) {
+            OF.ui.toast("error", res.message || "Không tải được sản phẩm trong đơn.");
+            itemsBox.innerHTML = "";
+            return;
+          }
+          orderItems = res.data.items || [];
+          renderItems();
         });
-        prodSel.addEventListener("change", updatePreview);
-        qtyInput.addEventListener("input", updatePreview);
 
         api.el.querySelector("#createReturnBtn").addEventListener("click", async () => {
-          const it = currentItem();
-          const qty = Number(qtyInput.value);
           const reason = api.el.querySelector("#rReason").value.trim();
+          const selected = selectedItems();
           let ok = true;
           api.el.querySelectorAll(".form-error").forEach((e) => e.classList.remove("show"));
           api.el.querySelectorAll(".is-invalid").forEach((e) => e.classList.remove("is-invalid"));
           if (!orderSel.value) { fieldErr(api, "rOrder", "Hãy chọn đơn hàng."); ok = false; }
-          if (!it) { fieldErr(api, "rProduct", "Hãy chọn sản phẩm."); ok = false; }
-          if (!qty || qty < 1) { fieldErr(api, "rQty", "Số lượng phải ≥ 1."); ok = false; }
+          if (!selected.length) { fieldErr(api, "rItems", "Hãy chọn ít nhất một sản phẩm."); ok = false; }
+          for (const x of selected) {
+            if (x.qty < 1 || x.qty > Number(x.item.quantity)) {
+              fieldErr(api, "rItems", "Số lượng trả phải từ 1 đến " + Number(x.item.quantity) + ".");
+              ok = false;
+              break;
+            }
+          }
           if (reason.length < 5) { fieldErr(api, "rReason", "Lý do phải có ít nhất 5 ký tự."); ok = false; }
           if (!ok) return;
 
@@ -295,14 +372,14 @@
           btn.disabled = true;
           const res = await OF.api.post("returns/index.php", {
             order_id: Number(orderSel.value),
-            order_item_id: it.id,
-            quantity: qty,
             reason,
+            items: selected.map((x) => ({ order_item_id: x.item.id, quantity: x.qty })),
           });
           btn.disabled = false;
           if (!res.success) {
             const errs = res.errors || {};
-            if (errs.quantity) fieldErr(api, "rQty", errs.quantity);
+            const first = Object.keys(errs)[0] || "";
+            if (first.startsWith("items")) fieldErr(api, "rItems", errs[first]);
             else if (errs.reason) fieldErr(api, "rReason", errs.reason);
             else OF.ui.toast("error", res.message || "Tạo yêu cầu thất bại.");
             return;

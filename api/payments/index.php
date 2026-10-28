@@ -32,7 +32,7 @@ if ($q !== '') {
     $params[] = "%$q%";
     $params[] = "%$q%";
 }
-if (in_array($status, ['thanh_cong', 'cho_xu_ly', 'that_bai'], true)) {
+if (in_array($status, ['thanh_cong', 'cho_xu_ly', 'that_bai', 'hoan_tien'], true)) {
     $where[] = 'p.status = ?';
     $params[] = $status;
 }

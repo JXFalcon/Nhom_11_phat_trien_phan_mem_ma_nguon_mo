@@ -12,9 +12,9 @@
 
 .auth-visual {
   background:
-    radial-gradient(1100px 500px at -10% -10%, rgba(139, 92, 246, 0.45), transparent 55%),
-    radial-gradient(900px 500px at 110% 110%, rgba(56, 189, 248, 0.28), transparent 55%),
-    linear-gradient(145deg, #1e1b4b 0%, #312e81 45%, #4338ca 100%);
+    radial-gradient(1100px 500px at -10% -10%, rgba(255, 119, 51, 0.4), transparent 55%),
+    radial-gradient(900px 500px at 110% 110%, rgba(255, 191, 105, 0.25), transparent 55%),
+    linear-gradient(145deg, #c2410c 0%, #e03f00 45%, #ff4d00 100%);
   color: #fff;
   padding: 48px 56px;
   display: flex;
@@ -64,7 +64,7 @@
 }
 
 .auth-brand .brand-name { font-size: 20px; }
-.auth-brand .brand-sub { color: #c7d2fe; font-size: 12.5px; }
+.auth-brand .brand-sub { color: #ffd9c7; font-size: 12.5px; }
 
 .auth-visual-body { position: relative; z-index: 1; max-width: 440px; }
 
@@ -77,7 +77,7 @@
 
 .auth-visual-body p {
   font-size: 14.5px;
-  color: #c7d2fe;
+  color: #ffd9c7;
   line-height: 1.65;
 }
 
@@ -93,7 +93,7 @@
   align-items: center;
   gap: 13px;
   font-size: 14px;
-  color: #e0e7ff;
+  color: #ffe7d9;
 }
 
 .auth-feature-icon {

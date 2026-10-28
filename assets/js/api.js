@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – api.js
+   Shopee – api.js
    Client gọi backend PHP (API JSON + Bearer token).
    - Cùng origin khi chạy bằng Apache/php -S.
    - Tự trỏ về http://127.0.0.1:8090 khi chạy Live Server (cổng khác).
@@ -50,10 +50,20 @@
     try { data = await res.json(); }
     catch (e) { data = { success: false, message: "Phản hồi máy chủ không hợp lệ (HTTP " + res.status + ")." }; }
 
-    // Hết phiên / chưa đăng nhập → về trang login
+    // Hết phiên / chưa đăng nhập → về trang login (có chống vòng lặp)
     if (res.status === 401 && path.indexOf("auth/") !== 0) {
       clearSession();
-      if (location.pathname.indexOf("login") === -1) location.replace("login.html");
+      if (location.pathname.indexOf("login") === -1) {
+        const BOUNCE_KEY = "orderflow.authBounce";
+        const last = Number(sessionStorage.getItem(BOUNCE_KEY) || 0);
+        if (Date.now() - last > 5000) {
+          sessionStorage.setItem("orderflow.authInfo", data && data.message ? data.message : "Phiên đăng nhập đã hết hoặc chưa đăng nhập. Vui lòng đăng nhập lại.");
+          sessionStorage.setItem(BOUNCE_KEY, String(Date.now()));
+          location.replace("login.html");
+        }
+        // Nếu mới bounce liên tục (< 5s) thì dừng, không redirect thêm
+        // để tránh vòng lặp vô hạn giữa trang hiện tại và trang đăng nhập.
+      }
     }
     return data;
   }

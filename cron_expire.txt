@@ -1,0 +1,9 @@
+# Cron job để tự động hết hạn đơn hàng (Đề tài 19)
+# Chạy mỗi 5 phút, gọi endpoint expire_all.php qua HTTP bằng POST.
+# Endpoint chỉ chấp nhận POST; gọi từ localhost không cần đăng nhập,
+# còn gọi từ máy khác phải có Bearer token admin/staff.
+# Ví dụ trên Linux/cron:
+# */5 * * * * curl -s -X POST http://127.0.0.1:8090/api/orders/expire_all.php >/dev/null 2>&1
+#
+# Hoặc trên Windows Task Scheduler, dùng curl -X POST gọi URL trên mỗi 5 phút.
+# Yêu cầu: máy chủ PHP (php -S 127.0.0.1:8090 router.php) phải đang chạy.

@@ -1,5 +1,5 @@
 /* ============================================================
-   OrderFlow – data.js (giai đoạn kết nối backend)
+   Shopee – data.js (giai đoạn kết nối backend)
    Giữ lại: hàm định dạng, nhãn/badge trạng thái, helper.
    Dữ liệu nghiệp vụ: lấy từ API MySQL (xem assets/js/api.js).
    ============================================================ */
@@ -78,6 +78,7 @@ window.OF = (function () {
     thanh_cong: { label: "Thành công", badge: "badge-green" },
     cho_xu_ly: { label: "Chờ xử lý", badge: "badge-orange" },
     that_bai: { label: "Thất bại", badge: "badge-red" },
+    hoan_tien: { label: "Đã hoàn tiền", badge: "badge-green" },
   };
 
   const PAYMENT_METHODS = {
