@@ -1,0 +1,77 @@
+<?php
+declare(strict_types=1);
+
+$pageTitle = 'Quản lý đơn hàng – Shopee';
+$scripts = [
+    'assets/js/data.js?v=4',
+    'assets/js/api.js?v=4',
+    'assets/js/app.js?v=4',
+    'assets/js/payment_qr.js?v=4',
+    'assets/js/pages/orders.js?v=4',
+];
+
+require __DIR__ . '/includes/layout/admin_top.php';
+?>
+
+<div class="page-head">
+          <div>
+            <h1>Quản lý đơn hàng</h1>
+            <p class="page-sub">Theo dõi vòng đời đơn: chờ xác nhận → đã xác nhận → đang giao → đã giao / đã hủy.</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" id="btnCreateOrder">+ Tạo đơn hàng</button>
+          </div>
+        </div>
+
+        <div class="alert-banner alert-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.2v.2"/></svg>
+          <div>
+            <strong>Đã kết nối backend PHP + MySQL</strong>
+            <p>Tạo đơn có transaction: kiểm tra &amp; trừ tồn kho thật, chặn tranh hàng, hoàn kho khi hủy. Đơn chờ xác nhận được giữ 30 phút; sau khi hết hạn, admin/staff có thể bấm đồng hồ để hủy và hoàn kho (yêu cầu kỹ thuật 1 của đề tài).</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="toolbar">
+            <div class="input-icon-wrap toolbar-search">
+              <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5"/></svg>
+              <input type="text" id="searchInput" class="form-control" placeholder="Tìm mã đơn, khách hàng…" />
+            </div>
+            <select id="statusFilter" class="form-select">
+              <option value="">Tất cả trạng thái</option>
+              <option value="cho_xac_nhan">Chờ xác nhận</option>
+              <option value="da_xac_nhan">Đã xác nhận</option>
+              <option value="dang_giao">Đang giao</option>
+              <option value="da_giao">Đã giao</option>
+              <option value="da_huy">Đã hủy</option>
+            </select>
+            <label class="form-label" style="margin:0;align-self:center">Từ</label>
+            <input type="date" id="dateFrom" class="form-control" style="width:auto" />
+            <label class="form-label" style="margin:0;align-self:center">Đến</label>
+            <input type="date" id="dateTo" class="form-control" style="width:auto" />
+            <button class="btn btn-sm" id="btnClearFilter">Xóa lọc</button>
+            <div class="toolbar-spacer"></div>
+            <span class="muted" id="resultCount"></span>
+          </div>
+          <div class="card-body flush">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>Ngày đặt</th>
+                    <th class="text-right">Tổng tiền</th>
+                    <th>Thanh toán</th>
+                    <th>Trạng thái</th>
+                    <th class="text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="orderTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pagination-bar" id="paginationBar"></div>
+        </div>
+
+<?php require __DIR__ . '/includes/layout/admin_bottom.php'; ?>

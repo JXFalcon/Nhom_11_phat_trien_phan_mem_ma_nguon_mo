@@ -62,6 +62,22 @@ Vào `products.html` → **Sửa sản phẩm** → dán 4–5 URL vào ô **Ả
 - `nhanvien@orderflow.vn` / `123456` – staff
 - `khachhang@orderflow.vn` / `123456` – customer
 
+<<<<<<< Updated upstream
+=======
+### 0.7 Cấu hình nhận tiền QR (chuyển khoản thật)
+1. Sao chép `config/payment.local.example.php` → `config/payment.local.php` (file local đã được `.gitignore`).
+2. Điền:
+   ```php
+   'bank_bin'       => '970436',        // mã BIN NAPAS 6 số
+   'bank_name'      => 'Vietcombank',
+   'account_number' => '0123456789',
+   'account_holder' => 'NGUYEN VAN A',  // không dấu, in hoa
+   ```
+3. Có thể dùng biến môi trường `OF_BANK_BIN`, `OF_BANK_NAME`, `OF_BANK_ACCOUNT`, `OF_BANK_HOLDER` thay cho file local.
+
+Mã QR dùng dịch vụ ảnh VietQR (`img.vietqr.io`), quét được bằng app ngân hàng thật. Mỗi lần tạo, nội dung chuyển khoản random (mã đơn + 5 ký tự) nên ảnh QR khác nhau nhưng luôn cùng tài khoản. Máy chủ xác nhận thanh toán qua webhook ngân hàng tại `api/payments/bank_webhook.php` (cấu hình `webhook_secret` / `OF_BANK_WEBHOOK_SECRET`); khách không thể tự bấm xác nhận khi `customer_confirm` tắt (mặc định). Nhân viên vẫn có thể xác nhận thủ công bằng nút mô phỏng trong `payments.php` khi cần.
+
+>>>>>>> Stashed changes
 ---
 
 ## 1. Giỏ hàng (chức năng 1)
@@ -188,6 +204,34 @@ Cuối bộ test còn kiểm tra báo cáo đối chiếu có tồn biến thể
 Runner từ chối chạy nếu tên DB không kết thúc bằng `_test`. Kết quả in `PASS/FAIL`
 và thoát mã `1` khi có lỗi.
 
+<<<<<<< Updated upstream
+=======
+### 6.2 Kiểm thử QR chuyển khoản
+
+Chạy test sinh QR (không cần database):
+```powershell
+D:\xampp\php\php.exe tests\payment_qr_test.php
+```
+
+Kiểm thử tích hợp đã bao gồm nhóm `6f`:
+- Tạo đơn `bank` → response có `payment_id`.
+- Tạo QR đúng BIN/số tài khoản cấu hình.
+- Tạo lần 2 → `memo` và `image_url` khác nhau nhưng cùng tài khoản; QR cũ chuyển `replaced`.
+- Khách khác không tạo được QR cho đơn người khác (403).
+- Nhân viên xác nhận thanh toán → `qr_status` trả `paid` và `order_status = da_xac_nhan`.
+- Đơn đã hết hạn giữ hàng không tạo được QR (409).
+
+Kịch bản thủ công:
+1. Đăng nhập khách → thêm sản phẩm vào giỏ → chọn **Chuyển khoản ngân hàng (QR)** → đặt hàng.
+2. Hệ thống chuyển sang `payments.php?qr=<payment_id>` và tự mở modal QR.
+3. Quét QR bằng app ngân hàng: số tiền và nội dung đã điền sẵn, tài khoản là tài khoản trong `config/payment.local.php`.
+4. Bấm **Tạo mã QR mới** → nội dung/ảnh QR đổi nhưng tài khoản giữ nguyên.
+5. Ngân hàng/trung gian gọi `POST /api/payments/bank_webhook.php` khi tiền vào (đúng memo + số tiền). Máy chủ đánh dấu thanh toán thành công và đơn chuyển sang **Đã xác nhận**. Khi chưa cấu hình webhook, admin/staff có thể bấm **Thành công** trong `payments.php` để xác nhận thủ công.
+6. Màn hình QR của khách tự phát hiện `paid` và chuyển sang `order_success.php?order_id=...`, hiển thị thông tin khách đã điền (người nhận, SĐT, địa chỉ), sản phẩm và trạng thái thanh toán. Nếu thanh toán đến sau khi đơn hết hạn, màn hình hiện cảnh báo đơn đã hủy và sẽ hoàn tiền.
+
+> Xác nhận thanh toán là nguồn từ ngân hàng (webhook) hoặc admin/staff. Khách không thể tự bấm "Tôi đã chuyển khoản" khi `customer_confirm` tắt (mặc định).
+
+>>>>>>> Stashed changes
 ---
 
 ## 7. Danh sách file đã thay đổi / tạo mới
@@ -201,7 +245,14 @@ và thoát mã `1` khi có lỗi.
 - `api/orders/expire_all.php` (mới: cho cron)
 - `api/orders/index.php` (cập nhật: from_cart, reservation, biến thể)
 - `api/orders/status.php` (cập nhật: xác nhận/hủy qua lifecycle)
+<<<<<<< Updated upstream
 - `api/payments/simulate.php` (cập nhật: idempotency, thanh toán muộn)
+=======
+- `api/payments/simulate.php` (cập nhật: idempotency, thanh toán muộn, đánh dấu QR paid)
+- `api/payments/qr_create.php` (mới: tạo QR VietQR random theo giao dịch)
+- `api/payments/qr_status.php` (mới: kiểm tra trạng thái QR để poll)
+- `api/payments/bank_webhook.php` (mới: xác thực webhook ngân hàng, đối chiếu memo/số tiền, idempotent, xử lý thanh toán muộn)
+>>>>>>> Stashed changes
 - `api/products/index.php`, `api/products/item.php` (biến thể)
 - `api/returns/status.php` (trả một phần, điều chỉnh, hoàn tiền)
 - `api/shipments/status.php` (chốt giữ hàng trước khi giao)
@@ -231,7 +282,15 @@ và thoát mã `1` khi có lỗi.
 - `reservations.html` (mới)
 - `assets/js/pages/reservations.js` (mới)
 - `assets/js/pages/orders.js` (cập nhật: nút expire, đếm ngrosso)
+<<<<<<< Updated upstream
 - `assets/js/pages/payments.js` (cập nhật: thông báo order_expired)
+=======
+- `assets/js/pages/payments.js` (cập nhật: nút QR, tự mở modal theo `?qr=`)
+- `assets/js/pages/orders.js` (cập nhật: nút QR trong đơn, tự mở theo `?pay=`)
+- `assets/js/pages/cart.js` (cập nhật: chọn phương thức thanh toán)
+- `assets/js/payment_qr.js` (mới: modal QR, copy, đếm ngược, poll trạng thái; khách tự chuyển trang khi paid)
+- `order_success.php`, `assets/js/pages/order_success.js` (mới: trang xác nhận hiển thị thông tin khách đã điền + sản phẩm)
+>>>>>>> Stashed changes
 - `assets/js/pages/reports.js` (cập nhật: hiển thị biến thể + payment events)
 - `assets/js/pages/returns.js` (cập nhật: tạo yêu cầu trả nhiều dòng)
 - `assets/js/app.js` (cập nhật: menu nav, icon clock)
