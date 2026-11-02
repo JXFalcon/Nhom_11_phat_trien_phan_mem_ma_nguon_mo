@@ -8,6 +8,7 @@
  */
 declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/order_lifecycle.php';
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $pdo = db();
@@ -89,6 +90,8 @@ if ($method === 'POST') {
     }
 
     $items = [];
+    $cartId = 0;
+    $cartRawSig = null;
     if ($fromCart) {
         // Lấy items từ giỏ hàng active của user
         $stCart = $pdo->prepare('SELECT id FROM carts WHERE user_id = ? AND status = "active" ORDER BY id DESC LIMIT 1');
@@ -99,22 +102,27 @@ if ($method === 'POST') {
         }
         $cartId = (int)$cartRow['id'];
         $stItems = $pdo->prepare(
-            'SELECT ci.product_id, ci.variant, ci.quantity, ci.unit_price AS cart_price, p.price
-             FROM cart_items ci JOIN products p ON p.id = ci.product_id
-             WHERE ci.cart_id = ?'
+            'SELECT ci.product_id, ci.variant_id, ci.variant, ci.quantity
+             FROM cart_items ci WHERE ci.cart_id = ?
+             ORDER BY ci.product_id, ci.variant_id, ci.variant'
         );
         $stItems->execute([$cartId]);
         $cartRows = $stItems->fetchAll();
         if (count($cartRows) === 0) {
             json_fail('Giỏ hàng trống.', 422);
         }
+        $cartRawSig = json_encode(array_map(static fn(array $r): array => [
+            (int)$r['product_id'],
+            $r['variant_id'] !== null ? (int)$r['variant_id'] : null,
+            (string)$r['variant'],
+            (int)$r['quantity'],
+        ], $cartRows));
         foreach ($cartRows as $cr) {
             $items[] = [
                 'product_id' => (int)$cr['product_id'],
+                'variant_id' => $cr['variant_id'] !== null ? (int)$cr['variant_id'] : null,
                 'variant' => $cr['variant'],
                 'quantity' => (int)$cr['quantity'],
-                // Giá đã báo khách khi thêm giỏ — ưu tiên hơn giá hiện hành
-                'cart_price' => $cr['cart_price'] !== null ? (float)$cr['cart_price'] : null,
             ];
         }
     } else {
@@ -139,53 +147,91 @@ if ($method === 'POST') {
         json_fail('Dữ liệu đơn hàng không hợp lệ.', 422, $errors);
     }
 
+    $normalized = [];
+    foreach ($items as $it) {
+        $pid = (int)($it['product_id'] ?? 0);
+        $qty = (int)($it['quantity'] ?? 0);
+        if ($pid <= 0 || $qty <= 0) {
+            json_fail('Sản phẩm hoặc số lượng không hợp lệ.', 422);
+        }
+        $vid = isset($it['variant_id']) && $it['variant_id'] !== null ? (int)$it['variant_id'] : 0;
+        $vname = trim((string)($it['variant'] ?? ''));
+        $key = $pid . '|' . ($vid > 0 ? 'id:' . $vid : 'name:' . $vname);
+        if (!isset($normalized[$key])) {
+            $normalized[$key] = [
+                'product_id' => $pid,
+                'variant_id' => $vid > 0 ? $vid : null,
+                'variant' => $vname !== '' ? $vname : null,
+                'quantity' => 0,
+            ];
+        }
+        $normalized[$key]['quantity'] += $qty;
+    }
+    $items = array_values($normalized);
+    usort($items, static fn(array $a, array $b): int => $a['product_id'] <=> $b['product_id']);
+
     $pdo->beginTransaction();
     try {
+        if ($fromCart) {
+            $lockCart = $pdo->prepare('SELECT id FROM carts WHERE id = ? AND status = "active" FOR UPDATE');
+            $lockCart->execute([$cartId]);
+            if (!$lockCart->fetch()) {
+                throw new OrderFlowException('Giỏ hàng đã được xử lý hoặc không còn hiệu lực. Vui lòng tải lại giỏ hàng.', 409);
+            }
+            $lockItems = $pdo->prepare(
+                'SELECT product_id, variant_id, variant, quantity
+                 FROM cart_items WHERE cart_id = ?
+                 ORDER BY product_id, variant_id, variant FOR UPDATE'
+            );
+            $lockItems->execute([$cartId]);
+            $nowSig = json_encode(array_map(static fn(array $r): array => [
+                (int)$r['product_id'],
+                $r['variant_id'] !== null ? (int)$r['variant_id'] : null,
+                (string)$r['variant'],
+                (int)$r['quantity'],
+            ], $lockItems->fetchAll()));
+            if ($nowSig !== $cartRawSig) {
+                throw new OrderFlowException('Giỏ hàng vừa thay đổi, vui lòng tải lại và đặt hàng lại.', 409);
+            }
+        }
+
         $total = 0;
         $resolved = [];
         foreach ($items as $it) {
-            $pid = (int)($it['product_id'] ?? 0);
-            $qty = (int)($it['quantity'] ?? 0);
-            if ($pid <= 0 || $qty <= 0) {
-                $pdo->rollBack();
-                json_fail('Sản phẩm hoặc số lượng không hợp lệ.', 422);
+            $pid = (int)$it['product_id'];
+            $qty = (int)$it['quantity'];
+            $p = of_lock_product($pdo, $pid);
+            if ($p['status'] !== 'active') {
+                throw new OrderFlowException('Sản phẩm “' . $p['name'] . '” đã ngừng bán.', 422);
             }
-            // Khóa dòng sản phẩm để chống tranh hàng cuối
-            $st = $pdo->prepare('SELECT * FROM products WHERE id = ? FOR UPDATE');
-            $st->execute([$pid]);
-            $p = $st->fetch();
-            if (!$p || $p['status'] !== 'active') {
-                $pdo->rollBack();
-                json_fail('Sản phẩm #' . $pid . ' không tồn tại hoặc ngừng bán.', 422);
-            }
-            // Tính tồn chưa được giữ (stock trừ đi pending reservations chưa hết hạn)
-            $held = $pdo->prepare(
-                "SELECT COALESCE(SUM(quantity), 0) FROM reservations
-                 WHERE product_id = ? AND status = 'pending' AND reserved_until > NOW()"
+            $variant = of_resolve_variant(
+                $pdo, $pid, $it['variant_id'], $it['variant'], false,
+                of_variant_required($pdo, $pid)
             );
-            $held->execute([$pid]);
-            $heldQty = (int)$held->fetchColumn();
-            $available = (int)$p['stock'] - $heldQty;
-            if ($qty > $available) {
-                $pdo->rollBack();
-                json_fail(
-                    'Sản phẩm “' . $p['name'] . '” chỉ còn ' . $available . ' có thể đặt (tồn: ' . (int)$p['stock'] . ', đã giữ: ' . $heldQty . ').',
+            if (of_variant_required($pdo, $pid) && !$variant) {
+                throw new OrderFlowException('Vui lòng chọn biến thể cho sản phẩm “' . $p['name'] . '”.', 422);
+            }
+            $avail = of_availability($pdo, $p, $variant);
+            if ($qty > $avail['available']) {
+                throw new OrderFlowException(
+                    'Sản phẩm “' . $p['name'] . '” chỉ còn ' . $avail['available'] . ' có thể đặt (tồn: ' . $avail['stock'] . ', đã giữ: ' . $avail['held'] . ').',
                     409
                 );
             }
-            $variant = trim((string)($it['variant'] ?? ''));
-            // Snapshot giá TẠI THỜI ĐIỂM ĐẶT: đơn từ giỏ dùng giá đã chốt trong giỏ
-            // (cart_items.unit_price); đơn admin tạo mới dùng giá hiện hành.
-            $unitPrice = isset($it['cart_price']) && is_numeric($it['cart_price']) && (float)$it['cart_price'] > 0
-                ? (float)$it['cart_price']
-                : (float)$p['price'];
+            // Giá chốt tại thời điểm đặt: luôn lấy giá hiện tại của SP/biến thể,
+            // không dùng giá cũ đã lưu trong giỏ.
+            $unitPrice = (float)($variant['price'] ?? $p['price']);
+            if ($unitPrice <= 0) {
+                throw new OrderFlowException('Giá sản phẩm không hợp lệ.', 422);
+            }
             $line = $unitPrice * $qty;
             $total += $line;
             $resolved[] = [
                 'product_id' => $pid,
+                'variant_id' => $variant ? (int)$variant['id'] : null,
                 'sku' => $p['sku'],
                 'name' => $p['name'],
-                'variant' => $variant !== '' ? $variant : null,
+                'variant' => $variant ? $variant['name'] : null,
                 'quantity' => $qty,
                 'unit_price' => $unitPrice,
                 'line_total' => $line,
@@ -202,56 +248,70 @@ if ($method === 'POST') {
         $orderId = (int)$pdo->lastInsertId();
 
         $insItem = $pdo->prepare(
-            'INSERT INTO order_items (order_id, product_id, sku, product_name, variant, quantity, unit_price, line_total)
-             VALUES (?,?,?,?,?,?,?,?)'
+            'INSERT INTO order_items (order_id, product_id, variant_id, sku, product_name, variant, quantity, unit_price, line_total)
+             VALUES (?,?,?,?,?,?,?,?,?)'
         );
         $insRes = $pdo->prepare(
-            'INSERT INTO reservations (reservation_code, order_id, user_id, product_id, variant, quantity, unit_price, status, reserved_until)
-             VALUES (?, ?, ?, ?, ?, ?, ?, "pending", DATE_ADD(NOW(), INTERVAL 30 MINUTE))'
+            'INSERT INTO reservations (reservation_code, order_id, user_id, product_id, variant_id, variant, quantity, unit_price, status, reserved_until)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, "pending", DATE_ADD(NOW(), INTERVAL 30 MINUTE))'
         );
         $insMove = $pdo->prepare(
             "INSERT INTO inventory_movements (product_id, order_id, change_type, quantity, note, created_by)
              VALUES (?, ?, 'xuat', ?, ?, ?)"
         );
         foreach ($resolved as $r) {
-            $insItem->execute([$orderId, $r['product_id'], $r['sku'], $r['name'], $r['variant'], $r['quantity'], $r['unit_price'], $r['line_total']]);
-            // Tạo phiếu giữ hàng (chưa trừ kho thật, sẽ trừ khi thanh toán xác nhận)
+            $insItem->execute([
+                $orderId, $r['product_id'], $r['variant_id'], $r['sku'], $r['name'],
+                $r['variant'], $r['quantity'], $r['unit_price'], $r['line_total'],
+            ]);
             $resCode = next_code($pdo, 'reservations', 'reservation_code', 'RV-');
             $insRes->execute([
-                $resCode, $orderId, (int)$u['id'], $r['product_id'],
+                $resCode, $orderId, $userId, $r['product_id'], $r['variant_id'],
                 $r['variant'], $r['quantity'], $r['unit_price'],
             ]);
-            // Ghi log xuất tạm (hold) để theo dõi, không trừ thực tế
-            $insMove->execute([$r['product_id'], $orderId, -$r['quantity'], 'Giữ hàng khi tạo đơn ' . $code, $u['id']]);
+            $insMove->execute([
+                $r['product_id'], $orderId, -$r['quantity'],
+                'Giữ hàng khi tạo đơn ' . $code, $u['id'],
+            ]);
         }
 
-        // Nếu tạo từ giỏ hàng → chuyển giỏ sang checked_out và xóa items
         if ($fromCart) {
-            $pdo->prepare('UPDATE carts SET status = "checked_out", updated_at = NOW() WHERE user_id = ? AND status = "active"')
-                ->execute([(int)$u['id']]);
-            $pdo->prepare('DELETE FROM cart_items WHERE cart_id = (SELECT id FROM carts WHERE user_id = ? AND status = "checked_out" ORDER BY id DESC LIMIT 1)')
-                ->execute([(int)$u['id']]);
+            $pdo->prepare('UPDATE carts SET status = "checked_out", updated_at = NOW() WHERE id = ?')
+                ->execute([$cartId]);
+            $pdo->prepare('DELETE FROM cart_items WHERE cart_id = ?')->execute([$cartId]);
         }
 
         $pdo->prepare(
             "INSERT INTO order_history (order_id, from_status, to_status, note, changed_by) VALUES (?, NULL, 'cho_xac_nhan', 'Tạo đơn hàng và giữ hàng', ?)"
         )->execute([$orderId, $u['id']]);
 
-        // Thanh toán chờ xử lý (mô phỏng)
         $payCode = next_code($pdo, 'payments', 'payment_code', 'GD-');
         $pdo->prepare(
             'INSERT INTO payments (payment_code, order_id, amount, method, status, note) VALUES (?,?,?,?,?,?)'
         )->execute([$payCode, $orderId, $total, $methodPay, 'cho_xu_ly', 'Tạo cùng đơn hàng']);
+        $paymentId = (int)$pdo->lastInsertId();
+        of_payment_event(
+            $pdo, $paymentId, $orderId, null,
+            'cho_xu_ly', 'created', 'Tạo payment chờ xử lý cùng đơn hàng', (int)$u['id']
+        );
 
         $pdo->commit();
+    } catch (OrderFlowException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        json_fail($e->getMessage(), $e->statusCode);
     } catch (Throwable $e) {
-        $pdo->rollBack();
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
         json_fail('Không thể tạo đơn hàng. Vui lòng thử lại.', 500);
     }
 
     json_ok([
         'id' => $orderId,
         'order_code' => $code,
+        'payment_id' => $paymentId,
         'total_amount' => $total,
         'status' => 'cho_xac_nhan',
         'from_cart' => $fromCart,

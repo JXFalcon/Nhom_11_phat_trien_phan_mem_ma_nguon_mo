@@ -1,18 +1,18 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Báo cáo thống kê – Shopee</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
-</head>
-<body>
-  <div class="app">
-    <aside id="app-sidebar" class="sidebar"></aside>
-    <div class="main">
-      <header id="app-topbar" class="topbar"></header>
-      <main class="content">
-        <div class="page-head">
+<?php
+declare(strict_types=1);
+
+$pageTitle = 'Báo cáo thống kê – Shopee';
+$scripts = [
+    'assets/js/data.js?v=4',
+    'assets/js/api.js?v=4',
+    'assets/js/app.js?v=4',
+    'assets/js/pages/reports.js?v=4',
+];
+
+require __DIR__ . '/includes/layout/admin_top.php';
+?>
+
+<div class="page-head">
           <div>
             <h1>Báo cáo thống kê</h1>
             <p class="page-sub">Tổng hợp doanh thu, đơn hàng và tỷ lệ đổi trả tính từ MySQL.</p>
@@ -105,17 +105,5 @@
           </div>
           <div class="card-body"><div id="reconcileBody"></div></div>
         </section>
-      </main>
-    </div>
-  </div>
 
-  <div id="modal-root"></div>
-  <div id="toast-root" class="toast-root"></div>
-
-  <script src="assets/js/data.js?v=2"></script>
-
-  <script src="assets/js/api.js?v=2"></script>
-  <script src="assets/js/app.js?v=2"></script>
-  <script src="assets/js/pages/reports.js?v=2"></script>
-</body>
-</html>
+<?php require __DIR__ . '/includes/layout/admin_bottom.php'; ?>

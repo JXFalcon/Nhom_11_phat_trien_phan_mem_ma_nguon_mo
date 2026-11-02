@@ -29,13 +29,13 @@
   function renderRevenueChart(daily) {
     const el = document.getElementById("revenueChart");
     const data = (daily || []).map((d) => ({ label: d.label, value: Math.round(d.value / 1e5) * 1e5 }));
-    OF.charts.barChart(el, data, { height: 230 });
+    OF.charts.barChart(el, data, { height: 300 });
   }
 
   function renderStatusDonut(statusCounts) {
     const colors = {
       cho_xac_nhan: "#f59e0b",
-      da_xac_nhan: "#e03f00",
+      da_xac_nhan: "#ee4d2d",
       dang_giao: "#0ea5e9",
       da_giao: "#16a34a",
       da_huy: "#ef4444",
@@ -104,11 +104,11 @@
     const failedShip = shipRes.success ? shipRes.data.total : 0;
     const pendingPay = payRes.success ? payRes.data.total : 0;
     const rows = [
-      { label: "Đơn chờ xác nhận", count: Number(s.cho_xac_nhan || 0), href: "orders.html?status=cho_xac_nhan", tone: "var(--warning)" },
-      { label: "Yêu cầu đổi trả chờ xử lý", count: Number(s.pending_returns || 0), href: "returns.html?status=cho_xu_ly", tone: "var(--purple)" },
-      { label: "Đơn đang giao", count: Number(s.dang_giao || 0), href: "orders.html?status=dang_giao", tone: "var(--info)" },
-      { label: "Giao hàng thất bại", count: failedShip, href: "shipments.html?status=that_bai", tone: "var(--danger)" },
-      { label: "Giao dịch thanh toán chờ xử lý", count: pendingPay, href: "payments.html?status=cho_xu_ly", tone: "var(--muted)" },
+      { label: "Đơn chờ xác nhận", count: Number(s.cho_xac_nhan || 0), href: "orders.php?status=cho_xac_nhan", tone: "var(--warning)" },
+      { label: "Yêu cầu đổi trả chờ xử lý", count: Number(s.pending_returns || 0), href: "returns.php?status=cho_xu_ly", tone: "var(--purple)" },
+      { label: "Đơn đang giao", count: Number(s.dang_giao || 0), href: "orders.php?status=dang_giao", tone: "var(--info)" },
+      { label: "Giao hàng thất bại", count: failedShip, href: "shipments.php?status=that_bai", tone: "var(--danger)" },
+      { label: "Giao dịch thanh toán chờ xử lý", count: pendingPay, href: "payments.php?status=cho_xu_ly", tone: "var(--muted)" },
     ];
     document.getElementById("pendingList").innerHTML = rows.map((r) =>
       '<div class="quick-row">' +

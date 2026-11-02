@@ -1,0 +1,6 @@
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^([A-Za-z0-9_-]+)\.html$ $1.php [R=301,L,QSA]
+</IfModule>

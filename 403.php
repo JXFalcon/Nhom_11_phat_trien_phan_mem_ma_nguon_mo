@@ -1,9 +1,20 @@
+<?php
+declare(strict_types=1);
+
+$pageTitle = 'Không có quyền truy cập – Shopee';
+$scripts = [
+    'assets/js/data.js?v=4',
+    'assets/js/api.js?v=4',
+    'assets/js/app.js?v=4',
+    'assets/js/pages/forbidden.js?v=4',
+];
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Không có quyền truy cập – Shopee</title>
+  <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
@@ -88,8 +99,8 @@
         </div>
 
         <div class="auth-form" style="margin-top: 16px">
-          <a class="btn btn-primary auth-submit" id="goHomeBtn" href="orders.html">Đi tới trang của tôi</a>
-          <a class="btn auth-submit" id="goAdminBtn" href="index.html" style="display:none">Mở Dashboard quản trị</a>
+          <a class="btn btn-primary auth-submit" id="goHomeBtn" href="orders.php">Đi tới trang của tôi</a>
+          <a class="btn auth-submit" id="goAdminBtn" href="index.php" style="display:none">Mở Dashboard quản trị</a>
           <button type="button" class="btn btn-ghost auth-submit" id="logoutBtn403">Đăng xuất</button>
         </div>
 
@@ -98,9 +109,6 @@
     </main>
   </div>
 
-  <script src="assets/js/data.js?v=2"></script>
-  <script src="assets/js/api.js?v=2"></script>
-  <script src="assets/js/app.js?v=2"></script>
-  <script src="assets/js/pages/forbidden.js?v=2"></script>
+<?php require __DIR__ . '/includes/layout/scripts.php'; ?>
 </body>
 </html>

@@ -1,5 +1,5 @@
 /* ============================================================
-   Shopee – payments.js (Thanh toán mô phỏng)
+   Shopee – payments.js (Thanh toán mô phỏng + QR chuyển khoản)
    Giai đoạn 2: API MySQL — server-side idempotency:
    giao dịch đã kết thúc hoặc cùng idempotency_key gửi lại
    không bị đổi trạng thái/số tiền thêm lần nữa.
@@ -37,21 +37,29 @@
     const tbody = document.getElementById("paymentTableBody");
 
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7">' + OF.ui.emptyStateHTML("Không có giao dịch phù hợp", "Thử đổi bộ lọc.") + "</td></tr>";
+      tbody.innerHTML = '<tr><td colspan="8">' + OF.ui.emptyStateHTML("Không có giao dịch phù hợp", "Thử đổi bộ lọc.") + "</td></tr>";
       document.getElementById("paginationBar").innerHTML = "";
       return;
     }
 
     tbody.innerHTML = rows.map((p) => {
       const pending = p.status === "cho_xu_ly";
-      const actions = pending && canManage()
-        ? '<button class="btn btn-sm btn-success" data-ok="' + p.id + '" title="Mô phỏng thanh toán thành công">' +
-            OF.icon("check", "icon-sm") + " Thành công</button>" +
-          '<button class="btn btn-sm" data-fail="' + p.id + '" title="Mô phỏng thất bại" style="color:var(--danger)">' +
-            OF.icon("close", "icon-sm") + " Thất bại</button>"
+      const retryable = p.status === "that_bai";
+      const qrBtn = p.method === "bank" && pending
+        ? '<button class="btn btn-sm btn-primary" data-qr="' + p.id + '" title="Thanh toán bằng QR chuyển khoản">' +
+            OF.icon("card", "icon-sm") + " QR</button>"
+        : "";
+      const actions = qrBtn + ((pending || retryable) && canManage()
+        ? '<button class="btn btn-sm btn-success" data-ok="' + p.id + '" title="' +
+            (retryable ? "Thử lại thanh toán với idempotency key mới" : "Mô phỏng thanh toán thành công") + '">' +
+            OF.icon("check", "icon-sm") + " " + (retryable ? "Thử lại" : "Thành công") + "</button>" +
+          (pending
+            ? '<button class="btn btn-sm" data-fail="' + p.id + '" title="Mô phỏng thất bại" style="color:var(--danger)">' +
+              OF.icon("close", "icon-sm") + " Thất bại</button>"
+            : "")
         : '<button class="btn btn-sm btn-icon" data-info="' + p.id + '" title="' +
             (pending ? "Chờ xử lý" : "Đã kết thúc – gửi lại không đổi thêm") + '">' +
-            OF.icon("info", "icon-sm") + "</button>";
+            OF.icon("info", "icon-sm") + "</button>");
       return "<tr>" +
         "<td><strong>" + OF.escapeHtml(p.payment_code) + "</strong>" +
           (p.note ? '<span class="cell-sub">' + OF.escapeHtml(p.note) + "</span>" : "") + "</td>" +
@@ -59,6 +67,7 @@
         '<td class="text-right"><strong class="txn-amount">' + OF.fmt.money(p.amount) + "</strong></td>" +
         "<td>" + OF.escapeHtml(OF.PAYMENT_METHODS[p.method] || p.method) + "</td>" +
         "<td>" + OF.badgeHTML(OF.PAYMENT_STATUS, p.status) + "</td>" +
+        "<td>" + OF.badgeHTML(OF.ORDER_STATUS, p.order_status) + "</td>" +
         "<td>" + OF.fmt.dateTime(p.processed_at || p.created_at) + "</td>" +
         '<td><div class="cell-actions">' + actions + "</div></td>" +
       "</tr>";
@@ -68,6 +77,8 @@
       el.addEventListener("click", () => simulate(Number(el.getAttribute("data-ok")), "thanh_cong")));
     tbody.querySelectorAll("[data-fail]").forEach((el) =>
       el.addEventListener("click", () => simulate(Number(el.getAttribute("data-fail")), "that_bai")));
+    tbody.querySelectorAll("[data-qr]").forEach((el) =>
+      el.addEventListener("click", () => openQR(Number(el.getAttribute("data-qr")))));
     tbody.querySelectorAll("[data-info]").forEach((el) =>
       el.addEventListener("click", () => showSettledInfo(Number(el.getAttribute("data-info")))));
     tbody.querySelectorAll("[data-order]").forEach((el) =>
@@ -79,16 +90,26 @@
     });
   }
 
+  function openQR(paymentId) {
+    if (!OF.paymentQR) {
+      OF.ui.toast("error", "Chưa tải được module QR thanh toán.");
+      return;
+    }
+    OF.paymentQR.open({ paymentId: paymentId, onPaid: () => loadPayments() });
+  }
+
   function simulate(id, result) {
     const p = rowsCache.find((x) => x.id === id);
     if (!p) return;
-    if (p.status !== "cho_xu_ly") {
+    if (p.status === "thanh_cong" || p.status === "hoan_tien") {
       OF.ui.toast("info", "Giao dịch " + p.payment_code + " đã kết thúc (" + OF.PAYMENT_STATUS[p.status].label +
         "). Gửi lại thông báo không làm đổi số lượng/tiền thêm lần nữa.");
       return;
     }
     OF.ui.confirm({
-      title: result === "thanh_cong" ? "Mô phỏng thanh toán thành công?" : "Mô phỏng thanh toán thất bại?",
+      title: p.status === "that_bai"
+        ? "Thử lại thanh toán với key mới?"
+        : (result === "thanh_cong" ? "Mô phỏng thanh toán thành công?" : "Mô phỏng thanh toán thất bại?"),
       message: "Giao dịch " + p.payment_code + " · " + OF.fmt.money(p.amount) + " · đơn " + p.order_code + ".",
       tone: result === "thanh_cong" ? "success" : "danger",
       icon: result === "thanh_cong" ? "check" : "alert",
@@ -105,7 +126,8 @@
       const d = res.data;
       if (d.order_expired) {
         OF.ui.toast("error",
-          "Giao dịch " + p.payment_code + " → đơn " + p.order_code + " đã hết hạn giữ hàng. Thanh toán đến muộn không kích hoạt đơn và không cấp hàng.");
+          "Giao dịch " + p.payment_code + " → đơn " + p.order_code + " đã hết hạn giữ hàng. Thanh toán đến muộn không kích hoạt đơn và không cấp hàng." +
+          (d.refund_created ? " Đã tạo hoàn tiền " + OF.fmt.money(d.refund_amount) + "." : ""));
       } else if (d.already_settled) {
         OF.ui.toast("info", "Giao dịch đã ở trạng thái “" + OF.PAYMENT_STATUS[d.status].label + "”, bỏ qua để tránh xử lý trùng.");
       } else {
@@ -150,7 +172,7 @@
           '<div class="detail-item"><label>Phương thức</label><span>' + OF.escapeHtml(OF.PAYMENT_METHODS[o.payment_method] || o.payment_method) + "</span></div>" +
           '<div class="detail-item"><label>Trạng thái</label><span>' + OF.badgeHTML(OF.ORDER_STATUS, o.status) + "</span></div>" +
         "</div>",
-      footer: '<button class="btn" data-close>Đóng</button><a class="btn btn-primary" href="orders.html">Mở trang đơn hàng</a>',
+      footer: '<button class="btn" data-close>Đóng</button><a class="btn btn-primary" href="orders.php">Mở trang đơn hàng</a>',
     });
   }
 
@@ -162,6 +184,10 @@
       if (sel) sel.value = statusF;
     }
     loadPayments();
+    const qrParam = Number(qs.get("qr") || 0);
+    if (qrParam > 0) {
+      openQR(qrParam);
+    }
     document.getElementById("searchInput").addEventListener("input", (e) => {
       keyword = e.target.value; page = 1; loadPayments();
     });

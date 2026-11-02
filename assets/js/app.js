@@ -11,6 +11,7 @@
   /* ================= Bộ biểu tượng SVG (stroke) ================= */
   const ICON_PATHS = {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V21h13V9.5"/><path d="M10 21v-6h4v6"/>',
+    store: '<path d="M4 9.5V21h16V9.5"/><path d="M3 9.5 4.8 4h14.4L21 9.5a3 3 0 0 1-4.5 2.6 3 3 0 0 1-4.5 0 3 3 0 0 1-4.5 0A3 3 0 0 1 3 9.5z"/><path d="M9.5 21v-6h5v6"/>',
     box: '<path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/>',
     tag: '<path d="M3 3h8.5L21 12.5 12.5 21 3 12.5z"/><circle cx="7.8" cy="7.8" r="1.4"/>',
     clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8A.8.8 0 0 1 9.8 2h4.4a.8.8 0 0 1 .8.8V4"/><path d="M9 10h6M9 14h4"/>',
@@ -59,18 +60,18 @@
   /* Trang giới hạn vai trò: khách hàng (customer) chỉ quản lý thứ của mình –
    * đơn, giỏ của họ; Đổi trả và Thanh toán cho phép (API tự lọc theo user_id,
    * nút xử lý nội bộ bị ẩn qua canManage()). Các trang quản trị còn lại chỉ
-   * admin/staff dùng. index.html là storefront công khai, không tải app.js. */
+   * admin/staff dùng. index.php là storefront công khai, không tải app.js. */
   const PAGE_ROLES = {
-    "reports.html": ["admin", "staff"],
-    "products.html": ["admin", "staff"],
-    "categories.html": ["admin", "staff"],
-    "dashboard.html": ["admin", "staff"],
-    "shipments.html": ["admin", "staff"],
-    "reservations.html": ["admin", "staff"],
-    "orders.html": ["admin", "staff", "customer"],
-    "cart.html": ["admin", "staff", "customer"],
-    "returns.html": ["admin", "staff", "customer"],
-    "payments.html": ["admin", "staff", "customer"],
+    "reports.php": ["admin", "staff"],
+    "products.php": ["admin", "staff"],
+    "categories.php": ["admin", "staff"],
+    "dashboard.php": ["admin", "staff"],
+    "shipments.php": ["admin", "staff"],
+    "reservations.php": ["admin", "staff"],
+    "orders.php": ["admin", "staff", "customer"],
+    "cart.php": ["admin", "staff", "customer"],
+    "returns.php": ["admin", "staff", "customer"],
+    "payments.php": ["admin", "staff", "customer"],
   };
 
   function allowedRoles(page) {
@@ -90,46 +91,46 @@
 
   /* Trang khách hàng được dùng sau khi đăng nhập */
   function homePageFor(role) {
-    return role === "customer" ? "orders.html" : "dashboard.html";
+    return role === "customer" ? "orders.php" : "dashboard.php";
   }
 
   const NAV = [
     {
       title: "Trang chủ",
-      items: [{ href: "index.html", icon: "store", label: "Trang chủ thương mại" }],
+      items: [{ href: "index.php", icon: "store", label: "Trang chủ thương mại" }],
     },
     {
       title: "Tổng quan",
-      items: [{ href: "dashboard.html", icon: "home", label: "Dashboard" }],
+      items: [{ href: "dashboard.php", icon: "home", label: "Dashboard" }],
     },
     {
       title: "Sản phẩm",
       items: [
-        { href: "products.html", icon: "box", label: "Quản lý sản phẩm" },
-        { href: "categories.html", icon: "tag", label: "Danh mục" },
+        { href: "products.php", icon: "box", label: "Quản lý sản phẩm" },
+        { href: "categories.php", icon: "tag", label: "Danh mục" },
       ],
     },
     {
       title: "Đơn hàng",
       items: [
-        { href: "orders.html", icon: "clipboard", label: "Quản lý đơn hàng", customerLabel: "Đơn hàng của tôi" },
-        { href: "returns.html", icon: "ret", label: "Quản lý đổi trả", customerLabel: "Đổi trả của tôi" },
-        { href: "shipments.html", icon: "truck", label: "Quản lý giao hàng" },
-        { href: "payments.html", icon: "card", label: "Quản lý thanh toán", customerLabel: "Thanh toán của tôi" },
-        { href: "cart.html", icon: "box", label: "Giỏ hàng của tôi" },
-        { href: "reservations.html", icon: "box", label: "Quản lý giữ hàng" },
+        { href: "orders.php", icon: "clipboard", label: "Quản lý đơn hàng", customerLabel: "Đơn hàng của tôi" },
+        { href: "returns.php", icon: "ret", label: "Quản lý đổi trả", customerLabel: "Đổi trả của tôi" },
+        { href: "shipments.php", icon: "truck", label: "Quản lý giao hàng" },
+        { href: "payments.php", icon: "card", label: "Quản lý thanh toán", customerLabel: "Thanh toán của tôi" },
+        { href: "cart.php", icon: "box", label: "Giỏ hàng của tôi" },
+        { href: "reservations.php", icon: "box", label: "Quản lý giữ hàng" },
       ],
     },
     {
       title: "Phân tích",
-      items: [{ href: "reports.html", icon: "chart", label: "Báo cáo thống kê" }],
+      items: [{ href: "reports.php", icon: "chart", label: "Báo cáo thống kê" }],
     },
   ];
 
   /* ================= Sidebar / Topbar ================= */
   function currentPage() {
     const path = window.location.pathname.split("/").pop();
-    return path || "index.html";
+    return path || "index.php";
   }
 
   function pageTitleFor(file) {
@@ -239,7 +240,7 @@
       if (ok) {
         try { await OF.api.post("auth/logout.php"); } catch (e) { /* bỏ qua */ }
         OF.session.clear();
-        window.location.href = "login.html";
+        window.location.href = "login.php";
       }
     });
 
@@ -252,14 +253,14 @@
   /* ================= Bảo vệ trang (cần đăng nhập + quyền) ================= */
   function guard() {
     const page = currentPage();
-    const isAuthPage = page === "login.html" || page === "register.html";
+    const isAuthPage = page === "login.php" || page === "register.php";
     if (isAuthPage) return true;
     if (!OF.session.getToken()) {
-      window.location.replace("login.html");
+      window.location.replace("login.php");
       return false;
     }
     if (!canOpen(page)) {
-      window.location.replace("403.html?page=" + encodeURIComponent(page));
+      window.location.replace("403.php?page=" + encodeURIComponent(page));
       return false;
     }
     return true;
@@ -311,8 +312,10 @@
     document.body.appendChild(overlay);
 
     const close = () => {
+      if (!overlay.isConnected) return;
       overlay.remove();
       document.removeEventListener("keydown", onEsc);
+      if (typeof opts.onClose === "function") opts.onClose();
     };
     const onEsc = (e) => { if (e.key === "Escape") close(); };
     document.addEventListener("keydown", onEsc);
@@ -494,13 +497,13 @@
         const res = await OF.api.get("auth/me.php");
         if (!res.success) {
           OF.session.clear();
-          window.location.replace("login.html");
+          window.location.replace("login.php");
           return;
         }
         OF.session.setUser(res.data);
         // Vai trò lấy từ server là chuẩn mực: chặn lại nếu localStorage bị cũ/lỗi
         if (!canOpen(currentPage())) {
-          window.location.replace("403.html?page=" + encodeURIComponent(currentPage()));
+          window.location.replace("403.php?page=" + encodeURIComponent(currentPage()));
           return;
         }
         renderSidebar();

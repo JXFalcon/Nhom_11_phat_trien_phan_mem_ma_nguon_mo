@@ -1,29 +1,30 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Quản lý thanh toán – Shopee</title>
-  <link rel="stylesheet" href="assets/css/style.css" />
-</head>
-<body>
-  <div class="app">
-    <aside id="app-sidebar" class="sidebar"></aside>
-    <div class="main">
-      <header id="app-topbar" class="topbar"></header>
-      <main class="content">
-        <div class="page-head">
+<?php
+declare(strict_types=1);
+
+$pageTitle = 'Quản lý thanh toán – Shopee';
+$scripts = [
+    'assets/js/data.js?v=4',
+    'assets/js/api.js?v=4',
+    'assets/js/app.js?v=4',
+    'assets/js/payment_qr.js?v=3',
+    'assets/js/pages/payments.js?v=5',
+];
+
+require __DIR__ . '/includes/layout/admin_top.php';
+?>
+
+<div class="page-head">
           <div>
             <h1>Quản lý thanh toán</h1>
-            <p class="page-sub">Giao dịch mô phỏng: thành công / thất bại / chờ xử lý, đối chiếu với đơn hàng.</p>
+            <p class="page-sub">Giao dịch mô phỏng: thành công / thất bại / chờ xử lý, đối chiếu với đơn hàng. Giao dịch chuyển khoản có thêm nút tạo QR VietQR.</p>
           </div>
         </div>
 
         <div class="alert-banner alert-warning">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>
           <div>
-            <strong>Thanh toán chỉ là mô phỏng</strong>
-            <p>Không kết nối cổng thanh toán thật, không xử lý tiền thật. Giai đoạn sau: tiếp nhận webhook với idempotency key – gửi lại không tăng/tiền không đổi lần thứ hai (yêu cầu kỹ thuật 1 &amp; 2). Thanh toán đến sau khi đơn hết hạn giữ hàng không kích hoạt đơn và không cấp hàng (yêu cầu 5).</p>
+            <strong>QR chuyển khoản thật – xác nhận thanh toán mô phỏng</strong>
+            <p>Khách có thể quét mã VietQR để chuyển tiền thật vào tài khoản cửa hàng (cấu hình trong <code>config/payment.local.php</code>). Hệ thống không tự xác nhận qua webhook ngân hàng: nhân viên xác nhận bằng nút mô phỏng bên dưới. Sau khi xác nhận, đơn chuyển sang <strong>Đã xác nhận</strong> và màn hình QR của khách tự báo thanh toán thành công. Gửi lại thông báo cùng idempotency key hoặc giao dịch đã kết thúc sẽ không tăng/tiền không đổi lần thứ hai (yêu cầu kỹ thuật 1 &amp; 2). Thanh toán đến sau khi đơn hết hạn giữ hàng không kích hoạt đơn và không cấp hàng (yêu cầu 5).</p>
           </div>
         </div>
 
@@ -57,9 +58,10 @@
                     <th>Mã đơn hàng</th>
                     <th class="text-right">Số tiền</th>
                     <th>Phương thức</th>
-                    <th>Trạng thái</th>
+                    <th>Trạng thái TT</th>
+                    <th>Trạng thái đơn</th>
                     <th>Thời điểm</th>
-                    <th class="text-right">Thao tác mô phỏng</th>
+                    <th class="text-right">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody id="paymentTableBody"></tbody>
@@ -68,17 +70,5 @@
           </div>
           <div class="pagination-bar" id="paginationBar"></div>
         </div>
-      </main>
-    </div>
-  </div>
 
-  <div id="modal-root"></div>
-  <div id="toast-root" class="toast-root"></div>
-
-  <script src="assets/js/data.js?v=2"></script>
-
-  <script src="assets/js/api.js?v=2"></script>
-  <script src="assets/js/app.js?v=2"></script>
-  <script src="assets/js/pages/payments.js?v=2"></script>
-</body>
-</html>
+<?php require __DIR__ . '/includes/layout/admin_bottom.php'; ?>

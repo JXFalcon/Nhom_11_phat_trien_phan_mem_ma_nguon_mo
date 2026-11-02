@@ -65,6 +65,9 @@
           : '<td class="text-right"></td>') +
         '<td><div class="cell-actions">' +
           '<button class="btn btn-sm btn-icon" data-view="' + o.id + '" title="Xem chi tiết">' + OF.icon("eye", "icon-sm") + "</button>" +
+          (o.payment_method === "bank" && o.status === "cho_xac_nhan"
+            ? '<button class="btn btn-sm btn-icon" data-qr="' + o.id + '" title="Thanh toán QR chuyển khoản">' + OF.icon("card", "icon-sm") + "</button>"
+            : "") +
           (canManage() && NEXT_STATUS[o.status] && NEXT_STATUS[o.status].length
             ? '<button class="btn btn-sm btn-icon" data-status="' + o.id + '" title="Cập nhật trạng thái">' + OF.icon("refresh", "icon-sm") + "</button>"
             : "") +
@@ -80,6 +83,8 @@
 
     tbody.querySelectorAll("[data-view]").forEach((el) =>
       el.addEventListener("click", () => openDetail(Number(el.getAttribute("data-view")))));
+    tbody.querySelectorAll("[data-qr]").forEach((el) =>
+      el.addEventListener("click", () => openQR(Number(el.getAttribute("data-qr")))));
     tbody.querySelectorAll("[data-status]").forEach((el) =>
       el.addEventListener("click", () => openStatusModal(Number(el.getAttribute("data-status")))));
     tbody.querySelectorAll("[data-cancel]").forEach((el) =>
@@ -130,6 +135,7 @@
     const returns = res.data.returns || [];
     const history = res.data.history || [];
     const ship = shipments[0] || null;
+    const qrPayment = payments.slice().reverse().find((p) => p.method === "bank" && p.status === "cho_xu_ly") || null;
 
     const itemsHTML = items.map((it) =>
       "<tr><td>" + OF.escapeHtml(it.product_name) +
@@ -159,7 +165,7 @@
       '<td class="text-right">' + OF.fmt.money(r.refund_total) + "</td></tr>"
     ).join("");
 
-    OF.ui.openModal({
+    const detailModal = OF.ui.openModal({
       title: "Chi tiết đơn hàng " + o.order_code,
       size: "lg",
       body:
@@ -190,8 +196,26 @@
           ? '<h3 style="margin:18px 0 8px">Lịch sử trạng thái</h3>' +
             '<div class="table-wrap"><table class="order-items-table"><thead><tr><th>Thời điểm</th><th>Chuyển</th><th>Ghi chú</th></tr></thead><tbody>' + historyHTML + "</tbody></table></div>"
           : ""),
-      footer: '<button class="btn" data-close>Đóng</button>',
+      footer:
+        '<button class="btn" data-close>Đóng</button>' +
+        (qrPayment && o.status === "cho_xac_nhan"
+          ? '<button class="btn btn-primary" id="detailQR">' + OF.icon("card", "icon-sm") + " Thanh toán QR</button>"
+          : ""),
     });
+    if (qrPayment && o.status === "cho_xac_nhan") {
+      detailModal.el.querySelector("#detailQR").addEventListener("click", () => {
+        detailModal.close();
+        openQR(Number(o.id));
+      });
+    }
+  }
+
+  function openQR(orderId) {
+    if (!OF.paymentQR) {
+      OF.ui.toast("error", "Chưa tải được module QR thanh toán.");
+      return;
+    }
+    OF.paymentQR.open({ orderId: orderId, onPaid: () => loadOrders() });
   }
 
   /* ---------- Cập nhật trạng thái ---------- */
@@ -263,7 +287,7 @@
       confirmText: "Hết hạn & hủy",
     }).then(async (ok) => {
       if (!ok) return;
-      const res = await OF.api.post("orders/expire.php", {});
+      const res = await OF.api.post("orders/expire.php", { id: o.id });
       if (!res.success) { OF.ui.toast("error", res.message || "Hết hạn đơn thất bại."); return; }
       OF.ui.toast("success", "Đã xử lý " + res.data.expired_count + " đơn hết hạn giữ hàng.");
       loadOrders();
@@ -274,7 +298,7 @@
   let productOptions = [];
 
   async function openCreateForm() {
-    const prodRes = await OF.api.get("products/index.php", "status=active&per_page=50");
+    const prodRes = await OF.api.get("products/index.php", "status=active&per_page=200");
     if (!prodRes.success) { OF.ui.toast("error", prodRes.message || "Không tải được sản phẩm."); return; }
     productOptions = prodRes.data.items || [];
     const u = OF.session.getUser() || {};
@@ -290,18 +314,17 @@
       size: "md",
       body:
         '<form id="createOrderForm" novalidate>' +
-          (isCustomer
-            ? ""
-            : '<div class="form-row">' +
-              '<div class="form-group"><label class="form-label">Tên khách hàng <span class="req">*</span></label>' +
-                '<input class="form-control" id="coName" value="' + OF.escapeHtml(u.full_name || "") + '" />' +
-                '<div class="form-error" data-error-for="coName"></div></div>' +
-              '<div class="form-group"><label class="form-label">Số điện thoại</label>' +
-                '<input class="form-control" id="coPhone" placeholder="0901234567" value="' + OF.escapeHtml(u.phone || "") + '" /></div>' +
-            "</div>" +
-            '<div class="form-group"><label class="form-label">Địa chỉ</label>' +
-              '<input class="form-control" id="coAddress" placeholder="Số nhà, đường, quận, thành phố" /></div>'
-          ) +
+          '<div class="form-row">' +
+            '<div class="form-group"><label class="form-label">Tên khách hàng <span class="req">*</span></label>' +
+              '<input class="form-control" id="coName" value="' + OF.escapeHtml(u.full_name || "") + '"' + (isCustomer ? " readonly" : "") + ' />' +
+              '<div class="form-error" data-error-for="coName"></div></div>' +
+            '<div class="form-group"><label class="form-label">Số điện thoại <span class="req">*</span></label>' +
+              '<input class="form-control" id="coPhone" placeholder="0901234567" value="' + OF.escapeHtml(u.phone || "") + '" />' +
+              '<div class="form-error" data-error-for="coPhone"></div></div>' +
+          "</div>" +
+          '<div class="form-group"><label class="form-label">Địa chỉ giao hàng <span class="req">*</span></label>' +
+            '<input class="form-control" id="coAddress" placeholder="Số nhà, đường, quận, thành phố" />' +
+            '<div class="form-error" data-error-for="coAddress"></div></div>' +
           '<div class="form-group"><label class="form-label">Phương thức thanh toán</label>' +
             '<select class="form-select" id="coPayMethod">' +
               '<option value="cod">COD (thanh toán khi nhận)</option>' +
@@ -313,6 +336,11 @@
               '<option value="">— Chọn sản phẩm —</option>' + prodOpts +
             "</select>" +
             '<div class="form-error" data-error-for="coProduct"></div></div>' +
+          '<div class="form-group" id="coVariantWrap" style="display:none">' +
+            '<label class="form-label">Biến thể <span class="req">*</span></label>' +
+            '<select class="form-select" id="coVariant"></select>' +
+            '<div class="form-hint" id="coVariantHint"></div>' +
+            '<div class="form-error" data-error-for="coVariant"></div></div>' +
           '<div class="form-row">' +
             '<div class="form-group"><label class="form-label">Số lượng <span class="req">*</span></label>' +
               '<input class="form-control" id="coQty" type="number" min="1" step="1" value="1" /></div>' +
@@ -329,6 +357,34 @@
         const picked = [];
         const itemsBox = api.el.querySelector("#coItems");
         const totalEl = api.el.querySelector("#coTotal");
+        const prodSel = api.el.querySelector("#coProduct");
+        const variantWrap = api.el.querySelector("#coVariantWrap");
+        const variantSel = api.el.querySelector("#coVariant");
+        const variantHint = api.el.querySelector("#coVariantHint");
+
+        function currentProduct() {
+          return productOptions.find((p) => p.id === Number(prodSel.value)) || null;
+        }
+
+        function refreshVariants() {
+          const p = currentProduct();
+          const rows = (p && p.variant_rows) || [];
+          if (!p || !rows.length) {
+            variantWrap.style.display = "none";
+            variantSel.innerHTML = "";
+            variantHint.textContent = "";
+            return;
+          }
+          variantWrap.style.display = "";
+          variantSel.innerHTML = '<option value="">— Chọn biến thể —</option>' +
+            rows.map((v) =>
+              '<option value="' + v.id + '" data-price="' + (v.price != null ? v.price : p.price) +
+              '" data-stock="' + v.stock + '" data-name="' + OF.escapeHtml(v.name) + '">' +
+              OF.escapeHtml(v.name) + " · " + OF.fmt.money(v.price != null ? v.price : p.price) +
+              " (còn " + v.stock + ")</option>"
+            ).join("");
+          variantHint.textContent = "Sản phẩm có " + rows.length + " biến thể. Vui lòng chọn đúng biến thể.";
+        }
 
         function renderItems() {
           if (!picked.length) {
@@ -338,7 +394,7 @@
           }
           itemsBox.innerHTML = '<div class="table-wrap"><table class="order-items-table"><thead><tr><th>Sản phẩm</th><th class="text-right">SL</th><th class="text-right">Đơn giá</th><th class="text-right">Thành tiền</th><th></th></tr></thead><tbody>' +
             picked.map((it, idx) =>
-              "<tr><td>" + OF.escapeHtml(it.name) + "</td>" +
+              "<tr><td>" + OF.escapeHtml(it.name) + (it.variant ? ' <span class="muted">(' + OF.escapeHtml(it.variant) + ")</span>" : "") + "</td>" +
               '<td class="text-right">' + it.quantity + "</td>" +
               '<td class="text-right">' + OF.fmt.money(it.unit_price) + "</td>" +
               '<td class="text-right"><strong>' + OF.fmt.money(it.unit_price * it.quantity) + "</strong></td>" +
@@ -350,27 +406,54 @@
           totalEl.textContent = OF.fmt.money(total);
         }
         renderItems();
+        refreshVariants();
+        prodSel.addEventListener("change", refreshVariants);
 
         api.el.querySelector("#coAddItem").addEventListener("click", () => {
-          const sel = api.el.querySelector("#coProduct");
-          const pid = Number(sel.value);
+          const pid = Number(prodSel.value);
           const qty = Math.max(1, Number(api.el.querySelector("#coQty").value) || 1);
           const err = api.el.querySelector('[data-error-for="coProduct"]');
+          const vErr = api.el.querySelector('[data-error-for="coVariant"]');
           err.classList.remove("show");
+          vErr.classList.remove("show");
           if (!pid) { err.textContent = "Hãy chọn sản phẩm."; err.classList.add("show"); return; }
-          const opt = sel.options[sel.selectedIndex];
-          const stock = Number(opt.getAttribute("data-stock"));
-          const price = Number(opt.getAttribute("data-price"));
-          const name = opt.getAttribute("data-name");
-          const exist = picked.find((x) => x.product_id === pid);
+          const p = currentProduct();
+          const hasVariants = !!(p.variant_rows && p.variant_rows.length);
+          let variantId = null;
+          let variantName = "";
+          let stock = Number(p.stock);
+          let price = Number(p.price);
+          if (hasVariants) {
+            variantId = Number(variantSel.value);
+            if (!variantId) {
+              vErr.textContent = "Hãy chọn biến thể.";
+              vErr.classList.add("show");
+              return;
+            }
+            const vopt = variantSel.options[variantSel.selectedIndex];
+            stock = Number(vopt.getAttribute("data-stock"));
+            price = Number(vopt.getAttribute("data-price"));
+            variantName = vopt.getAttribute("data-name");
+          }
+          const key = pid + ":" + (variantId || 0);
+          const exist = picked.find((x) => x.key === key);
           const currentQty = exist ? exist.quantity : 0;
           if (currentQty + qty > stock) {
-            err.textContent = "Tồn kho chỉ còn " + stock + " (đang giữ trong đơn: " + currentQty + ").";
-            err.classList.add("show");
+            const target = hasVariants ? vErr : err;
+            target.textContent = "Tồn kho chỉ còn " + stock + " (đang giữ trong đơn: " + currentQty + ").";
+            target.classList.add("show");
             return;
           }
           if (exist) exist.quantity += qty;
-          else picked.push({ product_id: pid, name, quantity: qty, unit_price: price });
+          else picked.push({
+            key,
+            product_id: pid,
+            variant_id: variantId,
+            variant: variantName,
+            name: p.name,
+            quantity: qty,
+            unit_price: price,
+          });
           renderItems();
         });
 
@@ -385,24 +468,27 @@
           btn.disabled = true;
           const body = {
             payment_method: api.el.querySelector("#coPayMethod").value,
-            items: picked.map((x) => ({ product_id: x.product_id, quantity: x.quantity })),
+            customer_name: api.el.querySelector("#coName").value.trim(),
+            phone: api.el.querySelector("#coPhone").value.trim(),
+            address: api.el.querySelector("#coAddress").value.trim(),
+            items: picked.map((x) => ({
+              product_id: x.product_id,
+              variant_id: x.variant_id || null,
+              variant: x.variant || "",
+              quantity: x.quantity,
+            })),
           };
-          if (!isCustomer) {
-            body.customer_name = api.el.querySelector("#coName").value.trim();
-            body.phone = api.el.querySelector("#coPhone").value.trim();
-            body.address = api.el.querySelector("#coAddress").value.trim();
-          } else {
-            body.phone = u.phone || "";
-            body.address = api.el.querySelector("#coAddress") ? api.el.querySelector("#coAddress").value.trim() : "";
-          }
           const res = await OF.api.post("orders/index.php", body);
           btn.disabled = false;
           if (!res.success) {
             OF.ui.toast("error", res.message || "Tạo đơn thất bại.");
-            if (res.errors && res.errors.customer_name) {
-              const err = api.el.querySelector('[data-error-for="coName"]');
-              if (err) { err.textContent = res.errors.customer_name; err.classList.add("show"); }
-            }
+            const map = { customer_name: "coName", phone: "coPhone", address: "coAddress", items: "coProduct" };
+            Object.keys(map).forEach((field) => {
+              if (res.errors && res.errors[field]) {
+                const err = api.el.querySelector('[data-error-for="' + map[field] + '"]');
+                if (err) { err.textContent = res.errors[field]; err.classList.add("show"); }
+              }
+            });
             return;
           }
           OF.ui.toast("success", res.message || "Đã tạo đơn hàng.");
@@ -424,6 +510,10 @@
       if (sel) sel.value = statusF;
     }
     loadOrders();
+    const payParam = Number(qs.get("pay") || 0);
+    if (payParam > 0) {
+      openQR(payParam);
+    }
 
     window.addEventListener('beforeunload', () => {
       if (expireInterval) clearInterval(expireInterval);

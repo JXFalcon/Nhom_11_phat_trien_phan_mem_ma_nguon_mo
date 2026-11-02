@@ -1,10 +1,15 @@
+<?php
+declare(strict_types=1);
+
+$pageTitle = 'Quản lý bán hàng — An Nhiên';
+?>
 <!doctype html>
 <html lang="vi">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f6f3">
-  <title>Quản lý bán hàng — An Nhiên</title>
+  <title><?= htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8') ?></title>
   <link rel="stylesheet" href="assets/style.css">
   <script src="assets/app.js" defer></script>
 </head>

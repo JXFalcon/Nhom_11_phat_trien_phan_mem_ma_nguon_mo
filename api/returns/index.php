@@ -3,6 +3,8 @@
  * /api/returns/index.php
  * GET  – Danh sách yêu cầu đổi trả (customer: của mình; admin/staff: tất cả)
  * POST – Tạo yêu cầu đổi trả (customer cho đơn đã giao của mình).
+ *        Hỗ trợ 1 dòng: {order_id, order_item_id, quantity, reason}
+ *        hoặc nhiều dòng: {order_id, items: [{order_item_id, quantity}], reason}
  *        Kiểm tra: đơn thuộc về user, đã giao, SL trả ≤ SL đã giao − SL đã trả.
  */
 declare(strict_types=1);
@@ -57,12 +59,45 @@ if ($method === 'GET') {
     );
     $st->execute($params);
     $rows = $st->fetchAll();
+
+    $lineByRequest = [];
+    if ($rows) {
+        $ids = array_map(static fn(array $r): int => (int)$r['id'], $rows);
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        $lineSt = $pdo->prepare(
+            "SELECT ri.*, oi.quantity AS delivered_qty, oi.variant
+             FROM return_items ri
+             JOIN order_items oi ON oi.id = ri.order_item_id
+             WHERE ri.return_request_id IN ($marks)
+             ORDER BY ri.id"
+        );
+        $lineSt->execute($ids);
+        foreach ($lineSt->fetchAll() as $line) {
+            $rid = (int)$line['return_request_id'];
+            $lineByRequest[$rid][] = [
+                'id' => (int)$line['id'],
+                'order_item_id' => (int)$line['order_item_id'],
+                'product_id' => (int)$line['product_id'],
+                'product_name' => $line['product_name'],
+                'variant' => $line['variant'],
+                'quantity_requested' => (int)$line['quantity_requested'],
+                'quantity_accepted' => (int)$line['quantity_accepted'],
+                'quantity_delivered' => (int)$line['delivered_qty'],
+                'unit_price' => (float)$line['unit_price'],
+                'refund_amount' => (float)$line['refund_amount'],
+                'restock' => (int)$line['restock'] === 1,
+            ];
+        }
+    }
+
     foreach ($rows as &$r) {
         $r['id'] = (int)$r['id'];
         $r['order_id'] = (int)$r['order_id'];
         $r['refund_total'] = (float)$r['refund_total'];
         $r['unit_price'] = $r['unit_price'] !== null ? (float)$r['unit_price'] : null;
+        $r['items'] = $lineByRequest[(int)$r['id']] ?? [];
     }
+    unset($r);
     json_ok(['items' => $rows, 'total' => $total, 'page' => $page, 'per_page' => $perPage]);
 }
 
@@ -71,8 +106,21 @@ if ($method === 'POST') {
     $in = request_json();
     $orderId = (int)($in['order_id'] ?? 0);
     $reason = trim((string)($in['reason'] ?? ''));
-    $orderItemId = (int)($in['order_item_id'] ?? 0);
-    $qty = (int)($in['quantity'] ?? 0);
+
+    $rawItems = $in['items'] ?? null;
+    $legacySingle = !is_array($rawItems) || count($rawItems) === 0;
+    if ($legacySingle) {
+        $rawItems = [[
+            'order_item_id' => $in['order_item_id'] ?? 0,
+            'quantity' => $in['quantity'] ?? 0,
+        ]];
+        // Tương thích client cũ: không truyền order_item_id thì lấy dòng đầu của đơn.
+        if ((int)$rawItems[0]['order_item_id'] <= 0 && $orderId > 0) {
+            $first = $pdo->prepare('SELECT id FROM order_items WHERE order_id = ? ORDER BY id LIMIT 1');
+            $first->execute([$orderId]);
+            $rawItems[0]['order_item_id'] = (int)$first->fetchColumn();
+        }
+    }
 
     $errors = [];
     if ($orderId <= 0) {
@@ -81,8 +129,23 @@ if ($method === 'POST') {
     if (mb_strlen($reason) < 5) {
         $errors['reason'] = 'Lý do phải có ít nhất 5 ký tự.';
     }
-    if ($qty < 1) {
-        $errors['quantity'] = 'Số lượng trả phải ≥ 1.';
+
+    $requested = [];
+    foreach ($rawItems as $idx => $raw) {
+        $itemId = (int)($raw['order_item_id'] ?? 0);
+        $qty = (int)($raw['quantity'] ?? 0);
+        if ($itemId <= 0) {
+            $errors['items.' . $idx . '.order_item_id'] = 'Thiếu order_item_id.';
+        }
+        if ($qty < 1) {
+            $errors['items.' . $idx . '.quantity'] = 'Số lượng trả phải ≥ 1.';
+        }
+        if ($itemId > 0 && $qty > 0) {
+            $requested[$itemId] = ($requested[$itemId] ?? 0) + $qty;
+        }
+    }
+    if (!$requested) {
+        $errors['items'] = 'Cần ít nhất 1 sản phẩm hợp lệ để trả.';
     }
     if ($errors) {
         json_fail('Dữ liệu yêu cầu đổi trả không hợp lệ.', 422, $errors);
@@ -106,35 +169,45 @@ if ($method === 'POST') {
             json_fail('Chỉ đơn hàng đã giao mới đủ điều kiện đổi trả.', 409);
         }
 
-        // Chọn item nếu không truyền
-        if ($orderItemId <= 0) {
-            $first = $pdo->prepare('SELECT id FROM order_items WHERE order_id = ? ORDER BY id LIMIT 1');
-            $first->execute([$orderId]);
-            $orderItemId = (int)$first->fetchColumn();
+        $itemIds = array_keys($requested);
+        $marks = implode(',', array_fill(0, count($itemIds), '?'));
+        $itSt = $pdo->prepare("SELECT * FROM order_items WHERE order_id = ? AND id IN ($marks) FOR UPDATE");
+        $itSt->execute(array_merge([$orderId], $itemIds));
+        $itemById = [];
+        foreach ($itSt->fetchAll() as $item) {
+            $itemById[(int)$item['id']] = $item;
         }
-        $itSt = $pdo->prepare('SELECT * FROM order_items WHERE id = ? AND order_id = ? FOR UPDATE');
-        $itSt->execute([$orderItemId, $orderId]);
-        $item = $itSt->fetch();
-        if (!$item) {
+        if (count($itemById) !== count($itemIds)) {
             $pdo->rollBack();
-            json_fail('Sản phẩm không thuộc đơn hàng này.', 422);
+            json_fail('Có sản phẩm không thuộc đơn hàng này.', 422);
         }
 
-        // SL đã trả/đang chờ của order_item này
-        $retSt = $pdo->prepare(
-            "SELECT COALESCE(SUM(quantity_requested), 0) FROM return_items ri
+        // SL đã trả/đang chờ của từng order_item
+        $alreadySt = $pdo->prepare(
+            "SELECT ri.order_item_id, COALESCE(SUM(ri.quantity_requested), 0) AS already
+             FROM return_items ri
              JOIN return_requests r ON r.id = ri.return_request_id
-             WHERE ri.order_item_id = ? AND r.status IN ('cho_xu_ly','da_chap_nhan','da_hoan_tat')"
+             WHERE r.order_id = ? AND ri.order_item_id IN ($marks)
+               AND r.status IN ('cho_xu_ly','da_chap_nhan','da_hoan_tat')
+             GROUP BY ri.order_item_id"
         );
-        $retSt->execute([$orderItemId]);
-        $already = (int)$retSt->fetchColumn();
-        $remain = (int)$item['quantity'] - $already;
-        if ($qty > $remain) {
-            $pdo->rollBack();
-            json_fail(
-                'Số lượng trả (' . $qty . ') vượt quá số còn có thể trả (' . $remain . '). Đã giao ' . $item['quantity'] . ', đã yêu cầu/hoàn ' . $already . '.',
-                409
-            );
+        $alreadySt->execute(array_merge([$orderId], $itemIds));
+        $alreadyById = [];
+        foreach ($alreadySt->fetchAll() as $row) {
+            $alreadyById[(int)$row['order_item_id']] = (int)$row['already'];
+        }
+
+        foreach ($requested as $itemId => $qty) {
+            $item = $itemById[$itemId];
+            $already = $alreadyById[$itemId] ?? 0;
+            $remain = (int)$item['quantity'] - $already;
+            if ($qty > $remain) {
+                $pdo->rollBack();
+                json_fail(
+                    'Sản phẩm “' . $item['product_name'] . '”: số lượng trả (' . $qty . ') vượt quá số còn có thể trả (' . $remain . '). Đã giao ' . $item['quantity'] . ', đã yêu cầu/hoàn ' . $already . '.',
+                    409
+                );
+            }
         }
 
         $code = next_code($pdo, 'return_requests', 'return_code', 'DT-');
@@ -143,10 +216,14 @@ if ($method === 'POST') {
         )->execute([$code, $orderId, $u['role'] === 'customer' ? (int)$u['id'] : null, $order['customer_name'], $reason]);
         $rid = (int)$pdo->lastInsertId();
 
-        $pdo->prepare(
+        $insItem = $pdo->prepare(
             'INSERT INTO return_items (return_request_id, order_item_id, product_id, product_name, quantity_requested, quantity_accepted, unit_price, refund_amount, restock)
              VALUES (?,?,?,?,?,0,?,0,1)'
-        )->execute([$rid, $orderItemId, $item['product_id'], $item['product_name'], $qty, $item['unit_price']]);
+        );
+        foreach ($requested as $itemId => $qty) {
+            $item = $itemById[$itemId];
+            $insItem->execute([$rid, $itemId, $item['product_id'], $item['product_name'], $qty, $item['unit_price']]);
+        }
 
         $pdo->commit();
     } catch (Throwable $e) {
@@ -154,7 +231,12 @@ if ($method === 'POST') {
         json_fail('Không thể tạo yêu cầu đổi trả.', 500);
     }
 
-    json_ok(['id' => $rid, 'return_code' => $code], 'Đã gửi yêu cầu đổi trả.', 201);
+    json_ok([
+        'id' => $rid,
+        'return_code' => $code,
+        'items_count' => count($requested),
+        'quantity_requested' => array_sum($requested),
+    ], 'Đã gửi yêu cầu đổi trả.', 201);
 }
 
 json_fail('Phương thức không được hỗ trợ.', 405);
