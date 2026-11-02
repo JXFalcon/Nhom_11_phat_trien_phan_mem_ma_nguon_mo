@@ -13,7 +13,7 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $pdo = db();
 
 if ($method === 'GET') {
-    // Storefront (index.html) gọi với ?public=1: chỉ xem các sản phẩm active, không cần đăng nhập.
+    // Storefront (index.php) gọi với ?public=1: chỉ xem các sản phẩm active, không cần đăng nhập.
     $isPublic = isset($_GET['public']);
     if (!$isPublic) {
         require_auth();

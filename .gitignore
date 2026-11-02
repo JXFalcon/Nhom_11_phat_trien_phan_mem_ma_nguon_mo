@@ -78,3 +78,4 @@ obj/
 # C?u h�nh c?c b? (kh�ng commit m?t kh?u)
 # -----------------------------
 config/database.local.php
+config/payment.local.php

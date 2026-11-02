@@ -18,7 +18,7 @@ if ($id <= 0) {
 $pdo = db();
 
 if ($method === 'GET') {
-    // Trang bán hàng (product.html) gọi với ?public=1: xem sản phẩm active
+    // Trang bán hàng (product.php) gọi với ?public=1: xem sản phẩm active
     // không cần đăng nhập. Quản trị vẫn xem được ẩn theo cách gọi thường.
     $isPublic = isset($_GET['public']);
     if (!$isPublic) {

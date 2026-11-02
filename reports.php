@@ -1,0 +1,109 @@
+<?php
+declare(strict_types=1);
+
+$pageTitle = 'Báo cáo thống kê – Shopee';
+$scripts = [
+    'assets/js/data.js?v=4',
+    'assets/js/api.js?v=4',
+    'assets/js/app.js?v=4',
+    'assets/js/pages/reports.js?v=4',
+];
+
+require __DIR__ . '/includes/layout/admin_top.php';
+?>
+
+<div class="page-head">
+          <div>
+            <h1>Báo cáo thống kê</h1>
+            <p class="page-sub">Tổng hợp doanh thu, đơn hàng và tỷ lệ đổi trả tính từ MySQL.</p>
+          </div>
+          <div class="page-actions">
+            <select id="rangeFilter" class="form-select" style="width:auto">
+              <option value="7">7 ngày gần đây</option>
+              <option value="30" selected>30 ngày gần đây</option>
+              <option value="60">60 ngày gần đây</option>
+              <option value="">Toàn bộ dữ liệu</option>
+            </select>
+            <button class="btn btn-primary" id="btnExport">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11"/><path d="m7.5 10 4.5 4.5L16.5 10"/><path d="M4 19.5h16"/></svg>
+              Xuất CSV
+            </button>
+            <button class="btn btn-outline" id="btnReconcile">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="m16.5 12 3.5 3.5L23.5 12" transform="scale(0.9) translate(-2 -2)"/></svg>
+              Đối chiếu
+            </button>
+          </div>
+        </div>
+
+        <div class="alert-banner alert-info">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.2v.2"/></svg>
+          <div>
+            <strong>Dữ liệu mô phỏng</strong>
+            <p>Số liệu tính trực tiếp từ máy chủ trên cơ sở dữ liệu MySQL (API reports/summary).</p>
+          </div>
+        </div>
+
+        <section id="statGrid" class="stat-grid"></section>
+
+        <section class="grid-2-equal">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20v-6.5M10 20V8M15.5 20v-9M21 20V4.5"/><path d="M2.5 20h19"/></svg>
+                  Doanh thu theo ngày
+                </div>
+                <p class="card-sub" id="revenueSub">Đơn đã xác nhận trở đi · không tính đơn hủy</p>
+              </div>
+            </div>
+            <div class="card-body"><div id="revenueChart"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9h-9z"/></svg>
+                  Cơ cấu trạng thái đơn
+                </div>
+                <p class="card-sub">Trong khoảng thời gian đã chọn</p>
+              </div>
+            </div>
+            <div class="card-body"><div id="statusDonut"></div></div>
+          </div>
+        </section>
+
+        <section class="grid-2-equal">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"/><path d="M3 7.5 12 12l9-4.5M12 12v9"/></svg>
+                Top sản phẩm bán chạy
+              </div>
+            </div>
+            <div class="card-body"><div id="topProducts"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/></svg>
+                Doanh thu theo phương thức thanh toán
+              </div>
+            </div>
+            <div class="card-body"><div id="methodChart"></div></div>
+          </div>
+        </section>
+
+        <section class="card" id="reconcileCard" style="display:none">
+          <div class="card-header">
+            <div>
+              <div class="card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+                Đối chiếu hàng &amp; tiền mô phỏng
+              </div>
+              <p class="card-sub" id="reconcileSub"></p>
+            </div>
+          </div>
+          <div class="card-body"><div id="reconcileBody"></div></div>
+        </section>
+
+<?php require __DIR__ . '/includes/layout/admin_bottom.php'; ?>

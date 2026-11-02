@@ -1,12 +1,23 @@
 <?php
 /**
- * Router cho PHP built-in server (php -S 127.0.0.1:8080 router.php).
+ * Router cho PHP built-in server (php -S 127.0.0.1:8090 router.php).
  * – /api/* → chạy file PHP corresponding (xử lý query string).
- * – Còn lại → serve file tĩnh nếu tồn tại, nếu không trả index.html.
+ * – Còn lại → serve file tĩnh nếu tồn tại, nếu không trả index.php.
  */
 declare(strict_types=1);
 
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?? '/');
+
+// Chuyển các đường dẫn .html cũ sang .php, giữ nguyên query string.
+if (preg_match('~^/([A-Za-z0-9_-]+)\.html$~', $uri, $m)) {
+    $target = '/' . $m[1] . '.php';
+    if (($_SERVER['QUERY_STRING'] ?? '') !== '') {
+        $target .= '?' . $_SERVER['QUERY_STRING'];
+    }
+    header('Location: ' . $target, true, 301);
+    return true;
+}
+
 $file = __DIR__ . $uri;
 
 if ($uri !== '/' && is_file($file)) {
