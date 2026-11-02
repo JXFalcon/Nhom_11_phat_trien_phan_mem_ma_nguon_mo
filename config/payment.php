@@ -20,13 +20,22 @@ if (is_file($localFile)) {
     $local = is_array($loaded) ? $loaded : [];
 }
 
-// DEMO: cho phép khách tự xác nhận "Tôi đã chuyển khoản" để ghi nhận ngay,
-// không cần admin bấm. Production nên đặt false và dùng webhook ngân hàng.
+// Tự xác nhận của khách ("Tôi đã chuyển khoản") mặc định TẮT.
+// Chỉ bật lại khi demo nội bộ; production phải xác nhận qua webhook ngân hàng.
 $customerConfirmRaw = getenv('OF_BANK_CUSTOMER_CONFIRM');
 if ($customerConfirmRaw === false || $customerConfirmRaw === '') {
-    $customerConfirmRaw = $local['customer_confirm'] ?? '1';
+    $customerConfirmRaw = $local['customer_confirm'] ?? '0';
 }
 $customerConfirm = !in_array($customerConfirmRaw, [false, 0, '0', 'false', 'off'], true);
+
+// Webhook ngân hàng / trung gian (SePay, Casso, ...) xác nhận tiền vào.
+// Bắt buộc phải cấu hình; endpoint sẽ từ chối nếu để trống.
+$webhookSecret = trim((string)(getenv('OF_BANK_WEBHOOK_SECRET') ?: ($local['webhook_secret'] ?? '')));
+$webhookRequireHmac = getenv('OF_BANK_WEBHOOK_REQUIRE_HMAC');
+if ($webhookRequireHmac === false || $webhookRequireHmac === '') {
+    $webhookRequireHmac = $local['webhook_require_hmac'] ?? '0';
+}
+$webhookRequireHmac = in_array($webhookRequireHmac, [true, 1, '1', 'true', 'on'], true);
 
 return [
     'provider'       => 'vietqr',
@@ -38,4 +47,6 @@ return [
     'memo_prefix'    => getenv('OF_BANK_MEMO_PREFIX') ?: ($local['memo_prefix'] ?? 'DH'),
     'qr_ttl_minutes' => (int)(getenv('OF_BANK_QR_TTL') ?: ($local['qr_ttl_minutes'] ?? 15)),
     'customer_confirm' => $customerConfirm,
+    'webhook_secret' => $webhookSecret,
+    'webhook_require_hmac' => $webhookRequireHmac,
 ];

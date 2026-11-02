@@ -6,7 +6,7 @@ $scripts = [
     'assets/js/data.js?v=4',
     'assets/js/api.js?v=4',
     'assets/js/app.js?v=4',
-    'assets/js/payment_qr.js?v=3',
+    'assets/js/payment_qr.js?v=4',
     'assets/js/pages/orders.js?v=4',
 ];
 

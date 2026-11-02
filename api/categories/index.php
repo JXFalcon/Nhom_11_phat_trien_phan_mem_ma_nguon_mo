@@ -11,7 +11,7 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $pdo = db();
 
 if ($method === 'GET') {
-    // Storefront (index.php) gọi với ?public=1: xem danh mục không cần đăng nhập.
+    // Storefront (index.html) gọi với ?public=1: xem danh mục không cần đăng nhập.
     if (!isset($_GET['public'])) {
         require_auth();
     }

@@ -289,9 +289,8 @@ if ($method === 'POST') {
         $pdo->prepare(
             'INSERT INTO payments (payment_code, order_id, amount, method, status, note) VALUES (?,?,?,?,?,?)'
         )->execute([$payCode, $orderId, $total, $methodPay, 'cho_xu_ly', 'Tạo cùng đơn hàng']);
-        $paymentId = (int)$pdo->lastInsertId();
         of_payment_event(
-            $pdo, $paymentId, $orderId, null,
+            $pdo, (int)$pdo->lastInsertId(), $orderId, null,
             'cho_xu_ly', 'created', 'Tạo payment chờ xử lý cùng đơn hàng', (int)$u['id']
         );
 
@@ -311,7 +310,6 @@ if ($method === 'POST') {
     json_ok([
         'id' => $orderId,
         'order_code' => $code,
-        'payment_id' => $paymentId,
         'total_amount' => $total,
         'status' => 'cho_xac_nhan',
         'from_cart' => $fromCart,

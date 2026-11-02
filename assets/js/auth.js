@@ -57,15 +57,13 @@
   }
 
   /* ================= TRANG ĐĂNG NHẬP ================= */
-  // Xác định trang đích sau đăng nhập: ưu tiên ?redirect=<ten>.php (chấp nhận
-  // cả đuôi .html cũ và chuẩn hóa sang .php), mặc định là trang chủ.
+  // Xác định trang đích sau đăng nhập: ưu tiên ?redirect=<ten>.html (chỉ nhận
+  // tên file .html an toàn), mặc định luôn luôn là trang chủ.
   function resolveLanding() {
     const params = new URLSearchParams(window.location.search);
     const redirect = (params.get("redirect") || "").trim();
-    if (/^[a-z][a-z0-9_-]*\.(?:html|php)$/i.test(redirect)) {
-      return redirect.replace(/\.html$/i, ".php");
-    }
-    return "index.php";
+    if (/^[a-z][a-z0-9_]*\.html$/i.test(redirect)) return redirect;
+    return "index.html";
   }
 
   function initLogin() {
@@ -204,7 +202,7 @@
 
       showAlert(alertBox, "success", "Đăng ký thành công! Đang chuyển về trang đăng nhập…");
       toastAfterRegister("Tài khoản " + res.data.email + " đã được tạo trong cơ sở dữ liệu.");
-      setTimeout(() => { window.location.href = "login.php"; }, 1500);
+      setTimeout(() => { window.location.href = "login.html"; }, 1500);
     });
   }
 

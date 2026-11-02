@@ -59,7 +59,7 @@
         if (Date.now() - last > 5000) {
           sessionStorage.setItem("orderflow.authInfo", data && data.message ? data.message : "Phiên đăng nhập đã hết hoặc chưa đăng nhập. Vui lòng đăng nhập lại.");
           sessionStorage.setItem(BOUNCE_KEY, String(Date.now()));
-          location.replace("login.php");
+          location.replace("login.html");
         }
         // Nếu mới bounce liên tục (< 5s) thì dừng, không redirect thêm
         // để tránh vòng lặp vô hạn giữa trang hiện tại và trang đăng nhập.

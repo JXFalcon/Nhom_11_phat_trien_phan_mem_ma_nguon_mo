@@ -234,32 +234,6 @@ CREATE TABLE payment_events (
   CONSTRAINT fk_pe_user FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
--- Phiên QR chuyển khoản: mỗi lần tạo là một mã VietQR khác nhau (memo random)
--- nhưng luôn trỏ về cùng một tài khoản ngân hàng của cửa hàng.
-CREATE TABLE payment_qr_sessions (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  qr_token VARCHAR(16) NOT NULL,
-  payment_id INT UNSIGNED NOT NULL,
-  order_id INT UNSIGNED NOT NULL,
-  amount DECIMAL(14,0) NOT NULL,
-  memo VARCHAR(50) NOT NULL COMMENT 'Nội dung chuyển khoản: mã đơn + hậu tố random',
-  image_url VARCHAR(600) NOT NULL COMMENT 'URL ảnh QR VietQR',
-  status ENUM('pending','paid','expired','replaced') NOT NULL DEFAULT 'pending',
-  expires_at DATETIME NOT NULL,
-  created_by INT UNSIGNED DEFAULT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_qr_token (qr_token),
-  KEY idx_qr_payment (payment_id),
-  KEY idx_qr_order (order_id),
-  KEY idx_qr_status (status),
-  KEY idx_qr_expires (expires_at),
-  CONSTRAINT fk_qr_payment FOREIGN KEY (payment_id) REFERENCES payments (id) ON DELETE CASCADE,
-  CONSTRAINT fk_qr_order FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE,
-  CONSTRAINT fk_qr_user FOREIGN KEY (created_by) REFERENCES users (id) ON DELETE SET NULL
-) ENGINE=InnoDB;
-
 CREATE TABLE code_sequences (
   name VARCHAR(32) NOT NULL,
   value INT UNSIGNED NOT NULL DEFAULT 0,
@@ -368,7 +342,7 @@ CREATE TABLE order_history (
 ) ENGINE=InnoDB;
 
 -- Tài khoản (mật khẩu 123456 – bcrypt)
-INSERT INTO users (id, full_name, email, phone, password_hash, role) VALUES (1, 'Admin', 'admin@orderflow.vn', '0901000001', '$2y$10$.WR64q20hGwJdjnzTu.Fa.txkBOUx3PqCu9kUwCb2WilWqhKCQayW', 'admin');
+INSERT INTO users (id, full_name, email, phone, password_hash, role) VALUES (1, 'Nguyễn Văn Admin', 'admin@orderflow.vn', '0901000001', '$2y$10$.WR64q20hGwJdjnzTu.Fa.txkBOUx3PqCu9kUwCb2WilWqhKCQayW', 'admin');
 INSERT INTO users (id, full_name, email, phone, password_hash, role) VALUES (2, 'Trần Thị Hoa', 'nhanvien@orderflow.vn', '0901000002', '$2y$10$.WR64q20hGwJdjnzTu.Fa.txkBOUx3PqCu9kUwCb2WilWqhKCQayW', 'staff');
 INSERT INTO users (id, full_name, email, phone, password_hash, role) VALUES (3, 'Lê Minh Tuấn', 'khachhang@orderflow.vn', '0901000003', '$2y$10$.WR64q20hGwJdjnzTu.Fa.txkBOUx3PqCu9kUwCb2WilWqhKCQayW', 'customer');
 INSERT INTO users (id, full_name, email, phone, password_hash, role) VALUES (4, 'Nguyễn Minh Quân', 'user04@orderflow.vn', '0958054853', '$2y$10$.WR64q20hGwJdjnzTu.Fa.txkBOUx3PqCu9kUwCb2WilWqhKCQayW', 'customer');

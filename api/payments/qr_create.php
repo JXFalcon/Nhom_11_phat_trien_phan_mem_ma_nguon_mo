@@ -25,6 +25,9 @@ if ($paymentId <= 0 && $orderId <= 0) {
 }
 
 $pdo = db();
+if (!of_qr_table_exists($pdo)) {
+    json_fail('Chưa chạy migration bảng QR. Mở /database/migrate_payment_qr_web.php?run=1 rồi thử lại.', 409);
+}
 of_qr_expire_stale($pdo);
 
 $pdo->beginTransaction();
@@ -144,6 +147,16 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    $logDir = __DIR__ . '/../../logs';
+    is_dir($logDir) || @mkdir($logDir, 0777, true);
+    @file_put_contents(
+        $logDir . '/api_errors.log',
+        date('c') . ' | qr_create: user=' . (int)$u['id']
+            . ' payment=' . $paymentId . ' order=' . $orderId
+            . ' | ' . $e->getMessage()
+            . ' @ ' . $e->getFile() . ':' . $e->getLine() . PHP_EOL,
+        FILE_APPEND
+    );
     json_fail('Không thể tạo mã QR thanh toán.', 500);
 }
 
@@ -161,4 +174,5 @@ json_ok([
     'order_status' => $order['status'],
     'payment_status' => $pay['status'],
     'bank' => of_payment_bank_public($cfg),
+    'customer_confirm' => !empty($cfg['customer_confirm']),
 ], 'Đã tạo mã QR chuyển khoản mới.');

@@ -52,34 +52,19 @@
 
     tbody.innerHTML = items.map((it) => {
       const lineTotal = it.quantity * it.unit_price;
-      const stock = it.variant_stock != null ? it.variant_stock : it.product_stock;
-      const stockNote = stock != null ? '<span class="cart-stock' + (Number(stock) <= 5 ? ' is-low' : '') + '">' + (Number(stock) > 0 ? 'Còn ' + stock + ' sản phẩm' : 'Hết hàng') + '</span>' : '';
-      return '<tr>' +
-        '<td>' +
-          '<div class="cart-prod">' +
-            '<a href="product.php?id=' + it.product_id + '" class="cart-prod-thumb">' + OF.escapeHtml(it.emoji || '📦') + '</a>' +
-            '<div class="cart-prod-info">' +
-              '<a href="product.php?id=' + it.product_id + '" class="cart-prod-name">' + OF.escapeHtml(it.product_name) + '</a>' +
-              (it.variant ? '<span class="cart-prod-variant">' + OF.escapeHtml(it.variant) + '</span>' : '') +
-              '<span class="cart-prod-sku">' + OF.escapeHtml(it.sku || '') + '</span>' +
-            '</div>' +
-          '</div>' +
-        '</td>' +
-        '<td class="text-right"><span class="cart-unit-price">' + OF.fmt.money(it.unit_price) + '</span></td>' +
-        '<td class="text-center">' +
-          '<div class="cart-qty">' +
-            '<input type="number" class="form-control qty-input" data-id="' + it.id + '" value="' + it.quantity + '" min="1" aria-label="Số lượng" />' +
-          '</div>' +
-          stockNote +
-        '</td>' +
-        '<td class="text-right"><strong class="cart-line-total">' + OF.fmt.money(lineTotal) + '</strong></td>' +
-        '<td class="text-right"><button class="btn btn-sm btn-icon cart-remove" data-rm="' + it.id + '" title="Xóa sản phẩm">' + OF.icon("trash", "icon-sm") + '</button></td>' +
-      '</tr>';
+      return "<tr>" +
+        "<td>" + OF.escapeHtml(it.product_name) +
+          (it.variant ? ' <span class="muted">(' + OF.escapeHtml(it.variant) + ")</span>" : "") + "</td>" +
+        '<td class="text-right">' + OF.fmt.money(it.unit_price) + "</td>" +
+        '<td class="text-right">' +
+          '<input type="number" class="form-control qty-input" data-id="' + it.id + '" value="' + it.quantity + '" min="1" style="width:70px" />' +
+        "</td>" +
+        '<td class="text-right"><strong>' + OF.fmt.money(lineTotal) + "</strong></td>" +
+        '<td class="text-right"><button class="btn btn-sm btn-icon" data-rm="' + it.id + '" title="Xóa" style="color:var(--danger)">' + OF.icon("trash", "icon-sm") + "</button></td>" +
+      "</tr>";
     }).join("");
 
-    if (totalEl) totalEl.textContent = OF.fmt.money(total);
-    const subEl = document.getElementById("cartSubtotal");
-    if (subEl) subEl.textContent = OF.fmt.money(total);
+    totalEl.textContent = OF.fmt.money(total);
 
     tbody.querySelectorAll(".qty-input").forEach((el) =>
       el.addEventListener("change", () => updateQty(Number(el.getAttribute("data-id")), Number(el.value))));
@@ -117,13 +102,6 @@
     const phone = (document.getElementById("inpPhone").value || "").trim();
     const address = (document.getElementById("inpAddress").value || "").trim();
     const name = (document.getElementById("inpName").value || "").trim();
-    const payMethodEl = document.getElementById("inpPayMethod");
-    const payMethod = payMethodEl ? payMethodEl.value : "";
-    if (!payMethod) {
-      OF.ui.toast("error", "Vui lòng chọn phương thức thanh toán.");
-      if (payMethodEl) payMethodEl.focus();
-      return;
-    }
     if (!phone || !/^[\d+()\s-]{8,15}$/.test(phone)) {
       OF.ui.toast("error", "Vui lòng nhập số điện thoại người nhận hợp lệ (8–15 ký tự số).");
       document.getElementById("inpPhone").focus();
@@ -144,18 +122,13 @@
       phone: phone,
       address: address,
       customer_name: name,
-      payment_method: payMethod,
     });
     if (!res.success) {
       OF.ui.toast("error", res.message || "Tạo đơn thất bại.");
       return;
     }
     OF.ui.toast("success", res.message || "Đã tạo đơn hàng từ giỏ.");
-    if (payMethod === "bank" && res.data && res.data.payment_id) {
-      window.location.href = "payments.php?qr=" + res.data.payment_id;
-      return;
-    }
-    window.location.href = "orders.php";
+    window.location.href = "orders.html";
   }
 
   document.addEventListener("DOMContentLoaded", function () {
