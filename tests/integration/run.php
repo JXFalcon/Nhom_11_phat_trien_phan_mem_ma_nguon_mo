@@ -9,6 +9,10 @@ declare(strict_types=1);
 putenv('OF_DB_NAME=orderflow_test');
 $_ENV['OF_DB_NAME'] = 'orderflow_test';
 $_SERVER['OF_DB_NAME'] = 'orderflow_test';
+putenv('OF_BANK_BIN=970436');
+putenv('OF_BANK_NAME=Vietcombank');
+putenv('OF_BANK_ACCOUNT=0123456789');
+putenv('OF_BANK_HOLDER=NGUYEN VAN A');
 
 $root = dirname(__DIR__, 2);
 require __DIR__ . '/setup.php';
@@ -827,6 +831,77 @@ check(
 );
 check(($recMissing['data']['data']['payment_events']['ok'] ?? true) === false,
     'eventOk = false khi có payment kết thúc thiếu event', $recMissing);
+
+echo "\n== 6f. QR chuyển khoản: random, phân quyền, xác nhận ==\n";
+$p13 = product_id($pdo, 'SP-911');
+$o13 = create_order($customer, $p13, 1);
+check($o13['code'] === 201, 'Tạo đơn chuyển khoản để test QR', $o13);
+$id13 = (int)($o13['data']['data']['id'] ?? 0);
+$pay13 = (int)($o13['data']['data']['payment_id'] ?? 0);
+check($pay13 > 0, 'Tạo đơn trả về payment_id', $o13);
+
+$qrA = api('POST', '/api/payments/qr_create.php', $customer, ['payment_id' => $pay13]);
+$qrAImg = (string)($qrA['data']['data']['image_url'] ?? '');
+check(
+    $qrA['code'] === 200
+        && !empty($qrA['data']['data']['memo'])
+        && str_contains($qrAImg, 'img.vietqr.io/image/970436-0123456789'),
+    'Tạo QR đúng tài khoản ngân hàng cấu hình',
+    $qrA
+);
+
+$qrB = api('POST', '/api/payments/qr_create.php', $customer, ['payment_id' => $pay13]);
+$qrBImg = (string)($qrB['data']['data']['image_url'] ?? '');
+check(
+    $qrB['code'] === 200
+        && ($qrB['data']['data']['memo'] ?? '') !== ($qrA['data']['data']['memo'] ?? '')
+        && $qrBImg !== $qrAImg,
+    'Mỗi lần tạo QR khác nhau (memo/ảnh)',
+    [$qrA, $qrB]
+);
+check(str_contains($qrBImg, 'img.vietqr.io/image/970436-0123456789'),
+    'QR thứ hai vẫn trỏ cùng tài khoản', $qrB);
+$qrAId = (int)($qrA['data']['data']['qr_id'] ?? 0);
+$qrBId = (int)($qrB['data']['data']['qr_id'] ?? 0);
+$oldStatus = $pdo->query(
+    'SELECT status FROM payment_qr_sessions WHERE id = ' . $qrAId
+)->fetchColumn();
+check($oldStatus === 'replaced', 'QR cũ được đánh dấu replaced khi tạo mã mới');
+
+$reg2 = api('POST', '/api/auth/register.php', null, [
+    'full_name' => 'Khách kiểm thử 2',
+    'email' => 'customer2@test.local',
+    'phone' => '0900000009',
+    'password' => '123456',
+    'password_confirm' => '123456',
+]);
+check($reg2['code'] === 201, 'Tạo tài khoản khách thứ hai', $reg2);
+$customer2 = login('customer2@test.local');
+$qrOther = api('POST', '/api/payments/qr_create.php', $customer2, ['payment_id' => $pay13]);
+check($qrOther['code'] === 403, 'Khách khác không tạo được QR cho đơn người khác', $qrOther);
+
+$sim13 = simulate_payment($admin, $pay13, 'thanh_cong', 'IDEM-QR-' . $id13);
+check($sim13['code'] === 200, 'Xác nhận thanh toán QR thành công', $sim13);
+$qrStatus = api('GET', '/api/payments/qr_status.php?id=' . $qrBId, $customer);
+check(
+    $qrStatus['code'] === 200 && ($qrStatus['data']['data']['status'] ?? '') === 'paid',
+    'QR chuyển sang paid sau khi xác nhận thanh toán',
+    $qrStatus
+);
+check(
+    ($qrStatus['data']['data']['order_status'] ?? '') === 'da_xac_nhan',
+    'Đơn chuyển sang đã xác nhận sau khi thanh toán QR',
+    $qrStatus
+);
+
+$p14 = product_id($pdo, 'SP-912');
+$o14 = create_order($customer, $p14, 1);
+$id14 = (int)($o14['data']['data']['id'] ?? 0);
+$pay14 = (int)($o14['data']['data']['payment_id'] ?? 0);
+$pdo->prepare('UPDATE orders SET reserved_until = DATE_SUB(NOW(), INTERVAL 1 MINUTE) WHERE id = ?')
+    ->execute([$id14]);
+$qrExpired = api('POST', '/api/payments/qr_create.php', $customer, ['payment_id' => $pay14]);
+check($qrExpired['code'] === 409, 'Không tạo QR cho đơn đã hết hạn giữ hàng', $qrExpired);
 
 echo "\n----------------------------------------\n";
 echo 'Kết quả: ' . $GLOBALS['pass'] . ' PASS, ' . $GLOBALS['fail'] . " FAIL\n";

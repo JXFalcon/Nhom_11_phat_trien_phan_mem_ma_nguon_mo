@@ -6,6 +6,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/order_lifecycle.php';
+require_once __DIR__ . '/../../includes/payment_qr.php';
 
 if (!in_array(($_SERVER['REQUEST_METHOD'] ?? ''), ['PATCH', 'POST'], true)) {
     json_fail('Chỉ chấp nhận PATCH/POST.', 405);
@@ -78,6 +79,9 @@ try {
     }
 
     if (in_array($pay['status'], ['thanh_cong', 'hoan_tien'], true)) {
+        if ($pay['status'] === 'thanh_cong') {
+            of_qr_mark_paid($pdo, $id);
+        }
         of_payment_event(
             $pdo, $id, (int)$pay['order_id'], $idem,
             $result, 'ignored_terminal', 'Giao dịch đã kết thúc, bỏ qua thay đổi', (int)$u['id']
@@ -95,6 +99,9 @@ try {
     $pdo->prepare(
         'UPDATE payments SET status = ?, idempotency_key = ?, processed_at = NOW(), note = ? WHERE id = ?'
     )->execute([$result, $newKey, 'Mô phỏng thanh toán ' . $result, $id]);
+    if ($result === 'thanh_cong') {
+        of_qr_mark_paid($pdo, $id);
+    }
 
     $orderStatus = null;
     $orderExpired = false;

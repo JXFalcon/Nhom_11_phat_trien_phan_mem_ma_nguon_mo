@@ -8,14 +8,14 @@
   if (!OF) return;
 
   const PAGE_NAMES = {
-    "index.html": "Dashboard tổng quan",
-    "reports.html": "Báo cáo thống kê",
-    "products.html": "Quản lý sản phẩm",
-    "categories.html": "Quản lý danh mục",
-    "orders.html": "Quản lý đơn hàng",
-    "returns.html": "Quản lý đổi trả",
-    "shipments.html": "Quản lý giao hàng",
-    "payments.html": "Quản lý thanh toán",
+    "index.php": "Dashboard tổng quan",
+    "reports.php": "Báo cáo thống kê",
+    "products.php": "Quản lý sản phẩm",
+    "categories.php": "Quản lý danh mục",
+    "orders.php": "Quản lý đơn hàng",
+    "returns.php": "Quản lý đổi trả",
+    "shipments.php": "Quản lý giao hàng",
+    "payments.php": "Quản lý thanh toán",
   };
 
   const ROLE_LABELS = {
@@ -25,8 +25,8 @@
   };
 
   const ROLE_ALLOWED_PAGES = {
-    admin: ["index.html", "reports.html", "products.html", "categories.html"],
-    staff: ["index.html", "reports.html", "products.html", "categories.html"],
+    admin: ["index.php", "reports.php", "products.php", "categories.php"],
+    staff: ["index.php", "reports.php", "products.php", "categories.php"],
     customer: [],
   };
 
@@ -62,7 +62,7 @@
     const home = document.getElementById("goHomeBtn");
     if (home) {
       home.textContent = role === "customer" ? "Đi tới Đơn hàng của tôi" : "Về trang tổng quan";
-      home.setAttribute("href", role === "customer" ? "orders.html" : "index.html");
+      home.setAttribute("href", role === "customer" ? "orders.php" : "index.php");
     }
 
     const adminBtn = document.getElementById("goAdminBtn");
@@ -79,7 +79,7 @@
       btn.disabled = true;
       try { await OF.api.post("auth/logout.php"); } catch (e) { /* bỏ qua */ }
       OF.session.clear();
-      window.location.replace("login.html");
+      window.location.replace("login.php");
     });
   }
 

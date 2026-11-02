@@ -65,6 +65,9 @@
           : '<td class="text-right"></td>') +
         '<td><div class="cell-actions">' +
           '<button class="btn btn-sm btn-icon" data-view="' + o.id + '" title="Xem chi tiết">' + OF.icon("eye", "icon-sm") + "</button>" +
+          (o.payment_method === "bank" && o.status === "cho_xac_nhan"
+            ? '<button class="btn btn-sm btn-icon" data-qr="' + o.id + '" title="Thanh toán QR chuyển khoản">' + OF.icon("card", "icon-sm") + "</button>"
+            : "") +
           (canManage() && NEXT_STATUS[o.status] && NEXT_STATUS[o.status].length
             ? '<button class="btn btn-sm btn-icon" data-status="' + o.id + '" title="Cập nhật trạng thái">' + OF.icon("refresh", "icon-sm") + "</button>"
             : "") +
@@ -80,6 +83,8 @@
 
     tbody.querySelectorAll("[data-view]").forEach((el) =>
       el.addEventListener("click", () => openDetail(Number(el.getAttribute("data-view")))));
+    tbody.querySelectorAll("[data-qr]").forEach((el) =>
+      el.addEventListener("click", () => openQR(Number(el.getAttribute("data-qr")))));
     tbody.querySelectorAll("[data-status]").forEach((el) =>
       el.addEventListener("click", () => openStatusModal(Number(el.getAttribute("data-status")))));
     tbody.querySelectorAll("[data-cancel]").forEach((el) =>
@@ -130,6 +135,7 @@
     const returns = res.data.returns || [];
     const history = res.data.history || [];
     const ship = shipments[0] || null;
+    const qrPayment = payments.slice().reverse().find((p) => p.method === "bank" && p.status === "cho_xu_ly") || null;
 
     const itemsHTML = items.map((it) =>
       "<tr><td>" + OF.escapeHtml(it.product_name) +
@@ -159,7 +165,7 @@
       '<td class="text-right">' + OF.fmt.money(r.refund_total) + "</td></tr>"
     ).join("");
 
-    OF.ui.openModal({
+    const detailModal = OF.ui.openModal({
       title: "Chi tiết đơn hàng " + o.order_code,
       size: "lg",
       body:
@@ -190,8 +196,26 @@
           ? '<h3 style="margin:18px 0 8px">Lịch sử trạng thái</h3>' +
             '<div class="table-wrap"><table class="order-items-table"><thead><tr><th>Thời điểm</th><th>Chuyển</th><th>Ghi chú</th></tr></thead><tbody>' + historyHTML + "</tbody></table></div>"
           : ""),
-      footer: '<button class="btn" data-close>Đóng</button>',
+      footer:
+        '<button class="btn" data-close>Đóng</button>' +
+        (qrPayment && o.status === "cho_xac_nhan"
+          ? '<button class="btn btn-primary" id="detailQR">' + OF.icon("card", "icon-sm") + " Thanh toán QR</button>"
+          : ""),
     });
+    if (qrPayment && o.status === "cho_xac_nhan") {
+      detailModal.el.querySelector("#detailQR").addEventListener("click", () => {
+        detailModal.close();
+        openQR(Number(o.id));
+      });
+    }
+  }
+
+  function openQR(orderId) {
+    if (!OF.paymentQR) {
+      OF.ui.toast("error", "Chưa tải được module QR thanh toán.");
+      return;
+    }
+    OF.paymentQR.open({ orderId: orderId, onPaid: () => loadOrders() });
   }
 
   /* ---------- Cập nhật trạng thái ---------- */
@@ -486,6 +510,10 @@
       if (sel) sel.value = statusF;
     }
     loadOrders();
+    const payParam = Number(qs.get("pay") || 0);
+    if (payParam > 0) {
+      openQR(payParam);
+    }
 
     window.addEventListener('beforeunload', () => {
       if (expireInterval) clearInterval(expireInterval);

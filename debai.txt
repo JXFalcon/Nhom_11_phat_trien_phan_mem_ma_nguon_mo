@@ -1,0 +1,35 @@
+Đề tài 19. Xây dựng hệ thống xử lý đơn hàng và quản lý đổi trả trong bán hàng trực tuyến
+1. Bối cảnh và người sử dụng
+Đơn bán hàng cần đi qua các bước giữ hàng, xác nhận, giao, hủy hoặc trả một phần. Hệ thống theo dõi thay đổi số lượng và giá đã chốt, đồng thời tiếp nhận kết quả thanh toán mô phỏng mà không xử lý trùng.
+Người sử dụng: Khách đặt hàng, nhân viên xử lý đơn và người xác nhận trả hàng.
+2. Các chức năng cần hoàn thành
+1. Quản lý sản phẩm, biến thể, giá và lượng hàng có thể bán; tạo giỏ hàng và xác nhận dữ liệu đặt hàng.
+2. Tạo đơn và giữ hàng có thời hạn; lưu giá, số lượng và quy tắc tính tiền tại thời điểm đặt.
+3. Tiếp nhận thông báo thanh toán mô phỏng, xác nhận hoặc hủy đơn và hoàn lượng hàng đã giữ theo quy tắc.
+4. Xử lý giao hàng và yêu cầu trả một phần; kiểm tra lượng đã giao, đã trả và số tiền tương ứng.
+5. Theo dõi lịch sử đơn, đối chiếu hàng và khoản tiền mô phỏng; xuất báo cáo và xử lý thông báo đến muộn hoặc gửi lặp.
+3. Hai yêu cầu kỹ thuật
+Yêu cầu 1: Tự thiết kế vòng đời đơn, giữ hàng và giao dịch dữ liệu. Hai người tranh hàng cuối không được cùng thành công; thao tác hết hạn hoặc hủy gửi lại không hoàn hàng hai lần.
+Yêu cầu 2: Giữ giá của đơn đã chốt, kiểm soát thông báo thanh toán lặp/đến muộn và trả một phần. Tổng số trả không vượt đã giao; lịch sử phải giải thích được thay đổi số lượng, số tiền.
+4. Hai tình huống sử dụng
+Tình huống 1: Chọn hàng → đặt → giữ hàng → nhận thanh toán mô phỏng → xác nhận → giao.
+Tình huống 2: Yêu cầu trả một phần → kiểm tra số đã giao → xác nhận → cập nhật lượng và tiền mô phỏng → đối chiếu.
+5. Dữ liệu và phạm vi hỗ trợ
+Chuẩn bị 20 sản phẩm, 30 tài khoản và 100 đơn gồm hủy, hết hạn, trả một phần và thông báo trùng. Dữ liệu gợi ý: products, variants, orders, order_items, reservations, payment_events, returns, return_items.
+Thanh toán và giao nhận chỉ mô phỏng; không kết nối tiền thật, không tính thuế hoặc xây sàn đa nhà bán. Phạm vi khác đề tài kho: tập trung đơn hàng và đổi trả, không cần kiểm kê nhiều kho.
+6. Các phép thử bắt buộc
+1. Hai đơn tranh sản phẩm cuối không cùng giữ được hàng; lượng có thể bán không âm.
+2. Gửi lại thông báo thanh toán hoặc lệnh hủy không đổi số lượng/tiền thêm lần nữa.
+3. Đổi giá sản phẩm sau đặt không thay giá trong đơn đã chốt.
+4. Tổng lượng trả nhiều lần không vượt lượng đã giao; tiền hoàn mô phỏng tính theo dữ liệu của đơn.
+5. Thanh toán đến sau khi đơn hết hạn được xử lý theo quy tắc đã công bố, không tự hồi sinh đơn và cấp hàng vượt tồn.
+7. Rubric riêng — 10 điểm
+Tiêu chí	Điểm	Nội dung đánh giá
+Năm chức năng	3,0	Mục 2, mỗi chức năng 0,6 điểm khi đủ và tích hợp; 0,3 nếu một phần; 0 nếu chưa làm. Trình diễn hai tình huống ở mục 4.
+Kỹ thuật 1	1,0	Tự thiết kế vòng đời đơn, giữ hàng và giao dịch dữ liệu. Đối chiếu toàn bộ yêu cầu 1, mục 3.
+Kỹ thuật 2	1,0	Giữ giá của đơn đã chốt, kiểm soát thông báo thanh toán lặp/đến muộn và trả một phần. Đối chiếu toàn bộ yêu cầu 2, mục 3.
+Dữ liệu, an toàn	1,0	0,5: Giá đã chốt, lượng giao/giữ/trả và các phát sinh giữ đúng quan hệ.
+0,5: Người mua không sửa đơn của người khác hoặc tự sửa giá phía máy chủ.
+Kiểm thử, sửa lỗi	1,5	0,5: dữ liệu và đáp án, gồm các phép thử mục 6; 0,5: tự động và tích hợp; 0,5: sửa lỗi, chạy lại chức năng cũ. Đối chiếu các phép thử của đề tài.
+Mã nguồn mở, bàn giao	1,5	0,5: giấy phép và nguồn sử dụng; 0,5: tài liệu, issue và review; 0,5: bản phát hành cài và chạy lại được.
+Đóng góp cá nhân	1,0	0,5: phần lập trình của từng người; 0,5: giải thích và sửa một yêu cầu nhỏ khi vấn đáp.
