@@ -519,10 +519,6 @@
       if (expireInterval) clearInterval(expireInterval);
     });
 
-    window.addEventListener('beforeunload', () => {
-      if (expireInterval) clearInterval(expireInterval);
-    });
-
     document.getElementById("btnCreateOrder").addEventListener("click", openCreateForm);
     document.getElementById("searchInput").addEventListener("input", (e) => {
       keyword = e.target.value; page = 1; loadOrders();

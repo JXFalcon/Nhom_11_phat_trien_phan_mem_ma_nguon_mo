@@ -1,5 +1,5 @@
 /* ============================================================
-   Shopee – payments.js (Thanh toán mô phỏng)
+   Shopee – payments.js (Thanh toán mô phỏng + QR chuyển khoản)
    Giai đoạn 2: API MySQL — server-side idempotency:
    giao dịch đã kết thúc hoặc cùng idempotency_key gửi lại
    không bị đổi trạng thái/số tiền thêm lần nữa.
@@ -37,7 +37,7 @@
     const tbody = document.getElementById("paymentTableBody");
 
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="7">' + OF.ui.emptyStateHTML("Không có giao dịch phù hợp", "Thử đổi bộ lọc.") + "</td></tr>";
+      tbody.innerHTML = '<tr><td colspan="8">' + OF.ui.emptyStateHTML("Không có giao dịch phù hợp", "Thử đổi bộ lọc.") + "</td></tr>";
       document.getElementById("paginationBar").innerHTML = "";
       return;
     }
@@ -45,7 +45,11 @@
     tbody.innerHTML = rows.map((p) => {
       const pending = p.status === "cho_xu_ly";
       const retryable = p.status === "that_bai";
-      const actions = (pending || retryable) && canManage()
+      const qrBtn = p.method === "bank" && pending
+        ? '<button class="btn btn-sm btn-primary" data-qr="' + p.id + '" title="Thanh toán bằng QR chuyển khoản">' +
+            OF.icon("card", "icon-sm") + " QR</button>"
+        : "";
+      const actions = qrBtn + ((pending || retryable) && canManage()
         ? '<button class="btn btn-sm btn-success" data-ok="' + p.id + '" title="' +
             (retryable ? "Thử lại thanh toán với idempotency key mới" : "Mô phỏng thanh toán thành công") + '">' +
             OF.icon("check", "icon-sm") + " " + (retryable ? "Thử lại" : "Thành công") + "</button>" +
@@ -55,7 +59,7 @@
             : "")
         : '<button class="btn btn-sm btn-icon" data-info="' + p.id + '" title="' +
             (pending ? "Chờ xử lý" : "Đã kết thúc – gửi lại không đổi thêm") + '">' +
-            OF.icon("info", "icon-sm") + "</button>";
+            OF.icon("info", "icon-sm") + "</button>");
       return "<tr>" +
         "<td><strong>" + OF.escapeHtml(p.payment_code) + "</strong>" +
           (p.note ? '<span class="cell-sub">' + OF.escapeHtml(p.note) + "</span>" : "") + "</td>" +
@@ -63,6 +67,7 @@
         '<td class="text-right"><strong class="txn-amount">' + OF.fmt.money(p.amount) + "</strong></td>" +
         "<td>" + OF.escapeHtml(OF.PAYMENT_METHODS[p.method] || p.method) + "</td>" +
         "<td>" + OF.badgeHTML(OF.PAYMENT_STATUS, p.status) + "</td>" +
+        "<td>" + OF.badgeHTML(OF.ORDER_STATUS, p.order_status) + "</td>" +
         "<td>" + OF.fmt.dateTime(p.processed_at || p.created_at) + "</td>" +
         '<td><div class="cell-actions">' + actions + "</div></td>" +
       "</tr>";
@@ -72,6 +77,8 @@
       el.addEventListener("click", () => simulate(Number(el.getAttribute("data-ok")), "thanh_cong")));
     tbody.querySelectorAll("[data-fail]").forEach((el) =>
       el.addEventListener("click", () => simulate(Number(el.getAttribute("data-fail")), "that_bai")));
+    tbody.querySelectorAll("[data-qr]").forEach((el) =>
+      el.addEventListener("click", () => openQR(Number(el.getAttribute("data-qr")))));
     tbody.querySelectorAll("[data-info]").forEach((el) =>
       el.addEventListener("click", () => showSettledInfo(Number(el.getAttribute("data-info")))));
     tbody.querySelectorAll("[data-order]").forEach((el) =>
@@ -81,6 +88,14 @@
       page = p;
       loadPayments();
     });
+  }
+
+  function openQR(paymentId) {
+    if (!OF.paymentQR) {
+      OF.ui.toast("error", "Chưa tải được module QR thanh toán.");
+      return;
+    }
+    OF.paymentQR.open({ paymentId: paymentId, onPaid: () => loadPayments() });
   }
 
   function simulate(id, result) {
@@ -157,7 +172,7 @@
           '<div class="detail-item"><label>Phương thức</label><span>' + OF.escapeHtml(OF.PAYMENT_METHODS[o.payment_method] || o.payment_method) + "</span></div>" +
           '<div class="detail-item"><label>Trạng thái</label><span>' + OF.badgeHTML(OF.ORDER_STATUS, o.status) + "</span></div>" +
         "</div>",
-      footer: '<button class="btn" data-close>Đóng</button><a class="btn btn-primary" href="orders.html">Mở trang đơn hàng</a>',
+      footer: '<button class="btn" data-close>Đóng</button><a class="btn btn-primary" href="orders.php">Mở trang đơn hàng</a>',
     });
   }
 
@@ -169,6 +184,10 @@
       if (sel) sel.value = statusF;
     }
     loadPayments();
+    const qrParam = Number(qs.get("qr") || 0);
+    if (qrParam > 0) {
+      openQR(qrParam);
+    }
     document.getElementById("searchInput").addEventListener("input", (e) => {
       keyword = e.target.value; page = 1; loadPayments();
     });

@@ -71,8 +71,7 @@ set_exception_handler(static function (Throwable $e): void {
  * trình duyệt trang lạ gửi POST/PUT/PATCH/DELETE về API.
  */
 $OF_METHOD = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$OF_SKIP_ORIGIN_CHECK = defined('OF_SKIP_ORIGIN_CHECK') && OF_SKIP_ORIGIN_CHECK;
-if (!$OF_SKIP_ORIGIN_CHECK && !in_array($OF_METHOD, ['GET', 'HEAD', 'OPTIONS'], true)) {
+if (!in_array($OF_METHOD, ['GET', 'HEAD', 'OPTIONS'], true)) {
     $ofOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
     $ofSelf = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http')
         . '://' . ($_SERVER['HTTP_HOST'] ?? '');

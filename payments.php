@@ -6,7 +6,7 @@ $scripts = [
     'assets/js/data.js?v=4',
     'assets/js/api.js?v=4',
     'assets/js/app.js?v=4',
-    'assets/js/payment_qr.js?v=4',
+    'assets/js/payment_qr.js?v=3',
     'assets/js/pages/payments.js?v=5',
 ];
 
@@ -23,8 +23,8 @@ require __DIR__ . '/includes/layout/admin_top.php';
         <div class="alert-banner alert-warning">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>
           <div>
-            <strong>QR chuyển khoản thật – ngân hàng xác nhận qua webhook</strong>
-            <p>Khách quét mã VietQR để chuyển tiền thật vào tài khoản cửa hàng (cấu hình trong <code>config/payment.local.php</code>). Máy chủ chỉ đánh dấu thanh toán thành công khi nhận webhook tiền vào khớp đúng nội dung (memo) và số tiền tại <code>api/payments/bank_webhook.php</code>; khách không thể tự bấm xác nhận. Sau khi webhook xác nhận, đơn chuyển sang <strong>Đã xác nhận</strong> và khách được chuyển tới trang thông tin đơn hàng. Gửi lại thông báo cùng mã giao dịch ngân hàng hoặc giao dịch đã kết thúc sẽ không tăng/tiền không đổi lần thứ hai (yêu cầu kỹ thuật 1 &amp; 2). Thanh toán đến sau khi đơn hết hạn giữ hàng không kích hoạt đơn và không cấp hàng (yêu cầu 5).</p>
+            <strong>QR chuyển khoản thật – xác nhận thanh toán mô phỏng</strong>
+            <p>Khách có thể quét mã VietQR để chuyển tiền thật vào tài khoản cửa hàng (cấu hình trong <code>config/payment.local.php</code>). Hệ thống không tự xác nhận qua webhook ngân hàng: nhân viên xác nhận bằng nút mô phỏng bên dưới. Sau khi xác nhận, đơn chuyển sang <strong>Đã xác nhận</strong> và màn hình QR của khách tự báo thanh toán thành công. Gửi lại thông báo cùng idempotency key hoặc giao dịch đã kết thúc sẽ không tăng/tiền không đổi lần thứ hai (yêu cầu kỹ thuật 1 &amp; 2). Thanh toán đến sau khi đơn hết hạn giữ hàng không kích hoạt đơn và không cấp hàng (yêu cầu 5).</p>
           </div>
         </div>
 

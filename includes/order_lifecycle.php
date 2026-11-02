@@ -6,6 +6,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/payment_qr.php';
 
 class OrderFlowException extends RuntimeException
 {
@@ -307,6 +308,7 @@ function of_payment_event(PDO $pdo, int $paymentId, int $orderId, ?string $key, 
 /** Đánh dấu các payment đang chờ của đơn là thất bại + ghi payment_event. */
 function of_fail_pending_payments(PDO $pdo, int $orderId, ?int $actorId, string $reason): int
 {
+    of_qr_expire_order($pdo, $orderId);
     $st = $pdo->prepare(
         "SELECT id FROM payments WHERE order_id = ? AND status = 'cho_xu_ly' ORDER BY id FOR UPDATE"
     );

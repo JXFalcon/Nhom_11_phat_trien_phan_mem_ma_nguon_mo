@@ -13,12 +13,7 @@ return [
     'qr_template'    => 'compact2',        // compact | compact2 | qr_only
     'memo_prefix'    => 'DH',
     'qr_ttl_minutes' => 15,
-    // Tự xác nhận của khách: để false để buộc xác nhận qua webhook ngân hàng.
-    'customer_confirm' => false,
-    // Bí mật dùng để xác thực webhook (SePay/Casso/cổng ngân hàng).
-    // Có thể dùng Authorization: Bearer <secret>, X-Webhook-Secret,
-    // X-Secure-Token hoặc ?token=<secret>.
-    'webhook_secret' => 'THAY_BANG_CHUOI_BI_MAT_DAI',
-    // true = bắt buộc chữ ký HMAC-SHA256 của raw body (X-Signature).
-    'webhook_require_hmac' => false,
+    // true = demo: khách tự bấm "Tôi đã chuyển khoản" để xác nhận ngay.
+    // Production nên đặt false và dùng webhook ngân hàng.
+    'customer_confirm' => true,
 ];

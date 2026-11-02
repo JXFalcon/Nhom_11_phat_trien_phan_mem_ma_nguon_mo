@@ -4,7 +4,7 @@ Bài tập lớn nhóm 11 (Đề tài 19: xử lý đơn hàng & đổi trả). 
 
 ## Hai ứng dụng riêng biệt — đừng nhầm lẫn
 
-- **Ứng dụng chính (thư mục gốc):** storefront + quản trị PHP/MySQL tĩnh. Các trang HTML trong thư mục gốc + backend `api/`, `includes/`, `config/`, `assets/js/`, `assets/css/`.
+- **Ứng dụng chính (thư mục gốc):** storefront + quản trị PHP/MySQL. Các trang PHP trong thư mục gốc dùng layout chung ở `includes/layout/` + backend `api/`, `includes/`, `config/`, `assets/js/`, `assets/css/`.
 - **`ban_hang/`:** một ứng dụng riêng biệt "An Nhiên" (store JSON thuần `data/store.json`, tự chạy trên cổng 8085 thông qua `php -S … -t public`). Không dùng chung gì với thư mục gốc.
 - **`src/`, `tests/`, `lab.sh`:** các tạo phẩm bài tập Lab-02 riêng biệt (`CapacityPolicy`/`RegistrationPolicy`). Không liên quan đến ứng dụng chính.
 
@@ -27,9 +27,9 @@ php -S 127.0.0.1:8090 router.php   # từ thư mục gốc; router.php phân gi�
 ## Quy ước kiến trúc (rất dễ sai)
 
 - **Auth:** định danh Bearer. `api.js` lưu trữ token trong `localStorage["orderflow.token"]`; backend xác thực đối chiếu bảng `sessions` (`includes/auth.php`). API mới phải sử dụng `require_auth()` / `require_role('admin')`.
-- **Các trang quản trị** (`orders.html`, `products.html`, v.v.) tải `assets/js/{data,api,app}.js` + `pages/<page>.js`, và cần đặt các div trống `<aside id="app-sidebar">` / `<header id="app-topbar">` — `app.js` tự render cả hai và tự cắm guard của riêng nó (chuyển hướng khi chưa xác thực, kiểm tra `PAGE_ROLES`, kiểm tra lại phiên `auth/me.php`).
-- **`index.html` (storefront)** cố ý **không** tải `app.js` — nó giữ phong cách thẻ Tailwind "Shopee" riêng biệt, có inline script, kết hợp `data.js` + `api.js` và gọi API tương tự. Từ giữa: thay đổi nhỏ (duy trì một thương hiệu, không tạo lại modal đăng nhập cũ).
-- `dashboard.html` cũng là phong cách Shopee với ngoại lệ riêng của nó, nhưng vẫn tải `app.js` (guard + `OF.ui`, `OF.charts`); CSS cho chart/badge/modal được tích hợp trong trang.
+- **Các trang quản trị** (`orders.php`, `products.php`, v.v.) dùng `includes/layout/admin_top.php` / `admin_bottom.php`, tải `assets/js/{data,api,app}.js` + `pages/<page>.js`, và cần đặt các div trống `<aside id="app-sidebar">` / `<header id="app-topbar">` — `app.js` tự render cả hai và tự cắm guard của riêng nó (chuyển hướng khi chưa xác thực, kiểm tra `PAGE_ROLES`, kiểm tra lại phiên `auth/me.php`).
+- **`index.php` (storefront)** cố ý **không** tải `app.js` — nó giữ phong cách thẻ Tailwind "Shopee" riêng biệt, có inline script, kết hợp `data.js` + `api.js` và gọi API tương tự. `index.php`, `shop.php`, `product.php` dùng `storefront_top.php` / `storefront_footer.php`.
+- `dashboard.php` cũng là phong cách Shopee với ngoại lệ riêng của nó, nhưng vẫn tải `app.js` (guard + `OF.ui`, `OF.charts`); CSS cho chart/badge/modal được tích hợp trong trang.
 - Endpoint JSON trả lời qua `json_ok($data, $message, $code)` / `json_fail($message, $code, $errors)` — cấu trúc tham số là chính xác, nhầm lẫn thứ tự sẽ gây ra lỗi `TypeError` (ví dụ: lỗi đã tìm thấy trong `api/carts/index.php`).
 - Bảo vệ CSRF/guốc ở `includes/bootstrap.php`: các phương thức POST/PUT/PATCH từ origin khác sẽ bị từ chối; Live Server (:5500) và :8000 được thêm vào whitelist ở đó.
 - Chức năng hết hạn đơn hàng là cron: `*/5 * * * * curl -s http://127.0.0.1:8090/api/orders/expire_all.php` (xem `cron_expire.txt`).
@@ -38,5 +38,5 @@ php -S 127.0.0.1:8090 router.php   # từ thư mục gốc; router.php phân gi�
 
 - **Mã hóa UTF-8 (không có BOM) các file tiếng Việt.** PowerShell 5.1 `Get-Content`/`Set-Content` sẽ mã hóa lẫn lộn — sử dụng `.NET` `[IO.File]::ReadAllText/WriteAllText` với `UTF8Encoding($false)`, hoặc dùng Edit tool/Write tool, rồi kiểm tra lại encoding `/Đăng nhập/`.
 - Brand rename là phân biệt chữ hoa/thường: `OrderFlow` → `Shopee` trong UI, nhưng `orderflow.vn` (email demo), `orderflow` DB name và `orderflow.*` localStorage keys là **định danh thật — không được đổi tên**.
-- Mở `http://127.0.0.1:8090/...` để thử nghiệm frontend; backend nghiêm ngặt ở `/api/*`; sau khi sửa lỗi JS, nhấn Ctrl+F5 — trình duyệt có thể lưu cache `assets/js` cũ (các tag HTML có query `?v=2`).
+- Mở `http://127.0.0.1:8090/...` để thử nghiệm frontend; backend nghiêm ngặt ở `/api/*`; sau khi sửa lỗi JS, nhấn Ctrl+F5 — trình duyệt có thể lưu cache `assets/js` cũ (các trang dùng query `?v=4`). URL `.html` cũ được `router.php` / `.htaccess` chuyển 301 sang `.php`.
 - `config/database.php` chứa mật khẩu DB demo — không phải commit sản phẩm; giữ nguyên quy ước env-override.

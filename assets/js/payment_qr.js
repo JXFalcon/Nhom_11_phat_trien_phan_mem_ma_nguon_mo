@@ -75,10 +75,8 @@
           "<p>Số tiền và nội dung chuyển khoản đã được điền sẵn. Vui lòng giữ nguyên nội dung <strong>" +
           OF.escapeHtml(qr.memo) + "</strong> để cửa hàng đối chiếu đơn " + OF.escapeHtml(qr.order_code) +
           ". " + (isCustomer
-            ? (qr.customer_confirm
-              ? "Sau khi chuyển khoản xong, bấm <strong>Tôi đã chuyển khoản</strong> để hệ thống ghi nhận ngay."
-              : "Hệ thống sẽ <strong>tự xác nhận khi ngân hàng báo tiền vào</strong>. Vui lòng không đóng cửa sổ này; trang sẽ tự chuyển khi thanh toán hoàn tất.")
-            : "Ngân hàng sẽ gọi webhook để xác nhận tự động; hoặc bấm <strong>Thành công</strong> trong trang Thanh toán để ghi nhận thủ công.") +
+            ? "Sau khi chuyển khoản xong, bấm <strong>Tôi đã chuyển khoản</strong> để hệ thống ghi nhận ngay."
+            : "Sau khi khách chuyển khoản, bấm <strong>Thành công</strong> trong trang Thanh toán để ghi nhận.") +
           "</p></div>" +
         "</div>" +
       "</div>";
@@ -114,19 +112,6 @@
       footer: '<button class="btn" data-close>Đóng</button>' +
         '<a class="btn btn-primary" href="orders.php">Xem đơn hàng</a>',
     });
-  }
-
-  /* Khách đã thanh toán -> chuyển sang trang thông tin đơn đã điền.
-   * Nhân viên/admin vẫn xem modal kết quả như cũ. */
-  function finishPaid(qr, data, opts) {
-    const role = ((OF.session.getUser() || {}).role || "");
-    const orderId = Number((data || {}).order_id || qr.order_id || 0);
-    if (role === "customer" && opts.redirect !== false && orderId > 0) {
-      window.location.href = "order_success.php?order_id=" + encodeURIComponent(orderId);
-      return;
-    }
-    showResult(qr, data || {});
-    if (typeof opts.onPaid === "function") opts.onPaid(data || {});
   }
 
   function startCountdown(el, expiresAt) {
@@ -166,7 +151,7 @@
     let polling = false;
     let confirming = false;
     const isCustomer = ((OF.session.getUser() || {}).role || "") === "customer";
-    const confirmBtn = isCustomer && qr.customer_confirm
+    const confirmBtn = isCustomer
       ? '<button class="btn btn-success" id="qrConfirm">' + OF.icon("check", "icon-sm") + " Tôi đã chuyển khoản</button>"
       : "";
 
@@ -225,7 +210,8 @@
                 pollTimer = null;
               }
               api.close();
-              finishPaid(qr, res.data || {}, opts);
+              showResult(qr, res.data || {});
+              if (typeof opts.onPaid === "function") opts.onPaid(res.data || {});
             } finally {
               confirming = false;
               if (confirmEl.isConnected) {
@@ -247,7 +233,8 @@
               if (pollTimer) clearInterval(pollTimer);
               pollTimer = null;
               api.close();
-              finishPaid(qr, d, opts);
+              showResult(qr, d);
+              if (typeof opts.onPaid === "function") opts.onPaid(d);
             } else if (d.status === "expired") {
               const el = api.el.querySelector("#qrCountdown");
               if (el) {
