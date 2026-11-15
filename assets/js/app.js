@@ -175,12 +175,7 @@
       });
       html += "</div>";
     });
-    html += "</nav>" +
-      '<div class="sidebar-footer">' +
-        '<div class="demo-note">' + icon("info") +
-          "<span><strong>Đã kết nối MySQL</strong><br>Dữ liệu lấy từ backend PHP/MySQL qua API (giai đoạn 2).</span>" +
-        "</div>" +
-      "</div>";
+    html += "</nav>";
     el.innerHTML = html;
   }
 
@@ -205,7 +200,6 @@
       '<button class="topbar-menu-btn" id="sidebarToggle" aria-label="Mở menu">' + icon("menu") + "</button>" +
       '<div class="topbar-title">' + pageTitleFor(file) + "</div>" +
       '<div class="topbar-spacer"></div>' +
-      '<div class="topbar-badge" title="Backend PHP + MySQL"><span class="dot"></span> MySQL kết nối</div>' +
       '<div class="topbar-user">' +
         '<button class="user-btn" id="userMenuBtn">' +
           '<span class="avatar">' + OF.escapeHtml(initials(u.full_name)) + "</span>" +

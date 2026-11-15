@@ -5,7 +5,7 @@ $pageTitle = 'Quản lý giữ hàng – Shopee';
 $scripts = [
     'assets/js/data.js?v=4',
     'assets/js/api.js?v=4',
-    'assets/js/app.js?v=4',
+    'assets/js/app.js?v=5',
     'assets/js/pages/reservations.js?v=4',
 ];
 
@@ -16,14 +16,6 @@ require __DIR__ . '/includes/layout/admin_top.php';
           <div>
             <h1>Quản lý giữ hàng (Reservations)</h1>
             <p class="page-sub">Theo dõi phiếu giữ hàng: pending → confirmed (xác nhận thanh toán) → released/expired (giải phóng).</p>
-          </div>
-        </div>
-
-        <div class="alert-banner alert-info">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 12"/></svg>
-          <div>
-            <strong>Giữ hàng (Reservation)</strong>
-            <p>Khi khách đặt đơn, hệ thống tạo reservation pending (giữ hàng 30 phút, chưa trừ kho thật). Khi thanh toán xác nhận, reservation chuyển confirmed và trừ kho thật. Nếu hết hạn hoặc hủy, reservation bị released/expired và hàng được giải phóng.</p>
           </div>
         </div>
 

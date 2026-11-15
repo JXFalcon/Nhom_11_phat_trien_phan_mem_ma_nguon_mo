@@ -4,7 +4,7 @@
 
 ### 0.1 Chạy PHP server
 ```powershell
-php -S 127.0.0.1:8090 router.php
+& "D:\xampp\php\php.exe" -S 127.0.0.1:8090
 ```
 Hoặc dùng XAMPP Apache, truy cập `http://localhost`. Các URL `.html` cũ tự chuyển 301 sang `.php` qua `router.php` / `.htaccess`.
 

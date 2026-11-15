@@ -5,7 +5,7 @@ $pageTitle = 'Giỏ hàng – Shopee';
 $scripts = [
     'assets/js/data.js?v=4',
     'assets/js/api.js?v=4',
-    'assets/js/app.js?v=4',
+    'assets/js/app.js?v=5',
     'assets/js/pages/cart.js?v=5',
 ];
 
@@ -22,14 +22,6 @@ require __DIR__ . '/includes/layout/admin_top.php';
           </div>
           <div class="page-actions">
             <a class="btn" href="index.php"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m14.5 6-6 6 6 6"/></svg> Tiếp tục mua sắm</a>
-          </div>
-        </div>
-
-        <div class="alert-banner alert-info">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 12"/></svg>
-          <div>
-            <strong>Giỏ hàng được giữ trong 30 phút</strong>
-            <p>Sau khi tạo đơn, hàng sẽ được giữ (reservation) trong 30 phút. Nếu chưa thanh toán xác nhận, đơn sẽ hết hạn và hàng sẽ được giải phóng.</p>
           </div>
         </div>
 

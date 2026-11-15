@@ -5,7 +5,7 @@ $pageTitle = 'Quản lý đơn hàng – Shopee';
 $scripts = [
     'assets/js/data.js?v=4',
     'assets/js/api.js?v=4',
-    'assets/js/app.js?v=4',
+    'assets/js/app.js?v=5',
     'assets/js/payment_qr.js?v=3',
     'assets/js/pages/orders.js?v=4',
 ];
@@ -20,14 +20,6 @@ require __DIR__ . '/includes/layout/admin_top.php';
           </div>
           <div class="page-actions">
             <button class="btn btn-primary" id="btnCreateOrder">+ Tạo đơn hàng</button>
-          </div>
-        </div>
-
-        <div class="alert-banner alert-info">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.2v.2"/></svg>
-          <div>
-            <strong>Đã kết nối backend PHP + MySQL</strong>
-            <p>Tạo đơn có transaction: kiểm tra &amp; trừ tồn kho thật, chặn tranh hàng, hoàn kho khi hủy. Đơn chờ xác nhận được giữ 30 phút; sau khi hết hạn, admin/staff có thể bấm đồng hồ để hủy và hoàn kho (yêu cầu kỹ thuật 1 của đề tài).</p>
           </div>
         </div>
 

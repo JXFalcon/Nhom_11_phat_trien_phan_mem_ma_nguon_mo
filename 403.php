@@ -5,7 +5,7 @@ $pageTitle = 'Không có quyền truy cập – Shopee';
 $scripts = [
     'assets/js/data.js?v=4',
     'assets/js/api.js?v=4',
-    'assets/js/app.js?v=4',
+    'assets/js/app.js?v=5',
     'assets/js/pages/forbidden.js?v=4',
 ];
 ?>

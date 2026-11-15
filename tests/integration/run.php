@@ -347,6 +347,27 @@ check(
     [$saveContent, $contentAfter]
 );
 
+echo "\n== 0c. Tìm kiếm theo danh mục ==\n";
+$laptopCatId = (int)$pdo->query("SELECT id FROM categories WHERE name = 'Laptop' LIMIT 1")->fetchColumn();
+$laptopCatTotal = 0;
+if ($laptopCatId > 0) {
+    $stLaptop = $pdo->prepare("SELECT COUNT(*) FROM products WHERE category_id = ? AND status = 'active'");
+    $stLaptop->execute([$laptopCatId]);
+    $laptopCatTotal = (int)$stLaptop->fetchColumn();
+}
+$catSearch = api('GET', '/api/products/index.php?public=1&q=' . rawurlencode('Laptop') . '&per_page=200');
+$catRows = $catSearch['data']['data']['items'] ?? [];
+$laptopRows = array_values(array_filter($catRows, static fn(array $r): bool => ($r['category_name'] ?? '') === 'Laptop'));
+$relevant = $catRows && count(array_filter($catRows, static function (array $r): bool {
+    return ($r['category_name'] ?? '') === 'Laptop'
+        || mb_stripos((string)($r['name'] ?? ''), 'laptop') !== false;
+})) === count($catRows);
+check(
+    $catSearch['code'] === 200 && $laptopCatTotal > 0 && count($laptopRows) === $laptopCatTotal && $relevant,
+    'Tìm theo tên danh mục trả đủ sản phẩm thuộc danh mục',
+    $catSearch
+);
+
 echo "\n== 1. Tranh hàng cuối + biến thể ==\n";
 $p1 = product_id($pdo, 'SP-901');
 $a = create_order($customer, $p1, 1);
