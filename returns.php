@@ -5,7 +5,7 @@ $pageTitle = 'Quản lý đổi trả – Shopee';
 $scripts = [
     'assets/js/data.js?v=4',
     'assets/js/api.js?v=4',
-    'assets/js/app.js?v=4',
+    'assets/js/app.js?v=5',
     'assets/js/pages/returns.js?v=4',
 ];
 
@@ -22,14 +22,6 @@ require __DIR__ . '/includes/layout/admin_top.php';
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
               Tạo yêu cầu đổi trả
             </button>
-          </div>
-        </div>
-
-        <div class="alert-banner alert-warning">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 22 20H2z"/><path d="M12 10v4.5M12 17.4v.2"/></svg>
-          <div>
-            <strong>Quy tắc mô phỏng</strong>
-            <p>Tổng số lượng trả nhiều lần không được vượt lượng đã giao. Tiền hoàn tính theo giá đã chốt trong đơn (yêu cầu kỹ thuật 2). Giai đoạn sau: kiểm tra tại máy chủ + transaction.</p>
           </div>
         </div>
 

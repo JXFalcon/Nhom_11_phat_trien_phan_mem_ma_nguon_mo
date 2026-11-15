@@ -5,7 +5,7 @@ $pageTitle = 'Quản lý sản phẩm – Shopee';
 $scripts = [
     'assets/js/data.js?v=4',
     'assets/js/api.js?v=4',
-    'assets/js/app.js?v=4',
+    'assets/js/app.js?v=5',
     'assets/js/pages/products.js?v=4',
 ];
 

@@ -1,0 +1,50 @@
+DANH SÁCH BỔ SUNG — ĐỀ TÀI 19 (TẬP TRUNG ĐƠN MỚI)
+Cập nhật: 15/11/2026
+
+NGUYÊN TẮC
+- Không sửa/backfill các đơn cũ đang lỗi; giảng viên sẽ đặt đơn mới để chấm.
+- Ưu tiên thứ giảng viên nhìn thấy: luồng đặt đơn mới, 5 phép thử bắt buộc, hồ sơ bàn giao.
+- Dữ liệu hiện đã đủ ngưỡng 20 sản phẩm / 30 tài khoản / 100 đơn; không cần dọn đơn cũ.
+- Không chạy expire_all toàn bộ trên DB demo trước khi chấm vì sẽ hủy các đơn mẫu DH-1101/DH-1102.
+
+A. P0 — DEMO ĐƠN MỚI & 5 PHÉP THỬ BẮT BUỘC
+[ ] A1. Tạo bộ dữ liệu demo mới trong seed/migration:
+      - SP-2001 — Móc khóa mini 2.000đ — 2.000đ — tồn 100 — Phụ kiện.
+      - SP-2002 — Sticker mini 2.000đ — 2.000đ — tồn 100 — Phụ kiện.
+      - 1 sản phẩm hoặc biến thể “tranh hàng cuối” tồn = 1 để demo phép thử 1 (có thể tạm đặt SP-2002 tồn 1).
+[ ] A2. Viết kịch bản demo 2 tình huống, thao tác hoàn toàn trên giao diện với đơn mới:
+      - Tình huống 1: chọn hàng → giỏ → đặt → giữ 30 phút → thanh toán mô phỏng → xác nhận → giao.
+      - Tình huống 2: đơn mới đã giao → tạo trả một phần → chấp nhận → hoàn tất → xem hoàn tiền, tồn kho, history, đối chiếu.
+      - Ghi rõ URL, tài khoản, mã sản phẩm, thao tác, kết quả mong đợi và ảnh chụp từng bước.
+[ ] A3. Bổ sung khối “Quy tắc xử lý” hiển thị công khai: giữ hàng 30 phút, giá chốt tại thời điểm đặt, thanh toán lặp, thanh toán muộn, hủy đơn, trả một phần và công thức hoàn tiền.
+[ ] A4. Bổ sung hành động demo trên UI để giảng viên thấy trực tiếp 5 phép thử:
+      - Gửi lại thanh toán với cùng idempotency key và hiển thị kết quả replay.
+      - Gửi lại hủy/expire và hiển thị “đã hoàn kho trước đó”, không hoàn lần 2.
+      - Đổi giá sản phẩm sau khi đặt; chi tiết đơn vẫn giữ giá cũ.
+      - Tạo yêu cầu trả vượt số lượng đã giao; UI nhận lỗi 409 và giải thích.
+      - Thanh toán muộn; UI hiển thị đơn đã hủy và khoản hoàn tiền.
+[ ] A5. Bổ sung test cho đơn mới dùng đúng SP-2001/SP-2002: chạy 5 phép thử, kiểm tra DB và phản hồi UI; lưu log PASS/FAIL.
+[ ] A6. Bổ sung smoke test UI (hoặc checklist có ảnh) cho chuỗi storefront → giỏ → đặt hàng → thanh toán → đơn hàng → giao hàng → đổi trả.
+[ ] A7. Đưa SP-2001/SP-2002 và fixture demo vào seed/migration để reset DB vẫn còn; cập nhật HUONG_DAN_KIEM_THU.md từ 77 lên 79 sản phẩm.
+
+B. P1 — HỒ SƠ BÀN GIAO & MÃ NGUỒN MỞ
+[ ] B1. Thay README.md Lab-02 bằng README dự án: giới thiệu, kiến trúc, yêu cầu PHP/MySQL, cài đặt, import DB, migrations, chạy server, tài khoản demo, test, 2 tình huống demo, cấu trúc thư mục, giới hạn.
+[ ] B2. Bổ sung THIRD_PARTY_NOTICES hoặc mục nguồn sử dụng: Tailwind CDN, Font Awesome, VietQR, ảnh/emoji, thư viện; cập nhật LICENSE cho Nhóm 11.
+[ ] B3. Sửa CI: thêm job PHP 8.2 + MySQL/MariaDB, chạy php -l, tests/run.php, tests/integration/run.php; bỏ continue-on-error; chỉ chạy Node nếu có package.json.
+[ ] B4. Tạo tag/release v1.0.0 kèm release notes, hướng dẫn cài lại từ source/zip và checklist demo.
+[ ] B5. Tạo issue/PR/review thực tế trên GitHub (bug + feature + review), lưu link/minh chứng vào README hoặc docs.
+[ ] B6. Bổ sung CONTRIBUTORS.md / bảng phân công: thành viên, phần code, commit/PR, nội dung vấn đáp; bổ sung kịch bản 2 tình huống mục 4.
+
+C. P2 — HOÀN THIỆN SẢN PHẨM MỚI & UI
+[ ] C1. Thêm ảnh thật cho SP-2001/SP-2002; kiểm tra hiển thị storefront, shop, chi tiết, giỏ hàng và mobile.
+[ ] C2. Kiểm tra biến thể/giá/tồn kho của sản phẩm mới khi thêm giỏ và tạo đơn; đảm bảo giá snapshot đúng.
+[ ] C3. Rà responsive và accessibility cho modal quick view, giỏ hàng, checkout, modal thanh toán/đổi trả.
+[ ] C4. Test bảo mật: khách không xem/hủy/sửa đơn người khác; không tự gửi giá/tổng tiền hoặc sửa giá phía server.
+[ ] C5. Ghi CHANGELOG các lỗi đã sửa (login, pagination, quick view, banner) và kết quả test hồi quy.
+
+D. ĐÃ XONG — KHÔNG LÀM LẠI
+[x] 5/5 chức năng, 2/2 yêu cầu kỹ thuật; 109 test tích hợp PASS; 5 test đơn vị PASS.
+[x] Giỏ hàng, reservation 30 phút, thanh toán lặp/muộn, trả một phần, QR, báo cáo/đối chiếu.
+[x] Quick view, xóa ô trạng thái kết nối/banner demo không cần thiết.
+[x] Tạo live 2 sản phẩm 2.000đ (SP-2001, SP-2002); public API trả đúng.
+[x] 5 phép thử bắt buộc đã có test tích hợp API; không cần viết lại từ đầu.

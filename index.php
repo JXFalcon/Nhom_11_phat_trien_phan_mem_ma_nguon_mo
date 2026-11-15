@@ -127,13 +127,20 @@ require __DIR__ . '/includes/layout/storefront_top.php';
       </div>
 
       <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+      <div id="productPagination" class="sf-pagination" aria-label="Phân trang sản phẩm"></div>
     </div>
   </section>
 
-<?php require __DIR__ . '/includes/layout/storefront_footer.php'; ?>
+<?php
+$scripts = ['assets/js/data.js?v=4', 'assets/js/api.js?v=4', 'assets/js/quick-view.js?v=1'];
+require __DIR__ . '/includes/layout/storefront_footer.php';
+?>
 
   <script>
     let products = [];
+    let categories = [];
+    const PRODUCTS_PER_PAGE = 30;
+    let productPage = 1;
     let currentSlide = 0;
     // Banner hero: dùng ảnh SVG cục bộ (assets/images/) — không phụ thuộc
     // mạng ngoài nên luôn hiển thị được; hoạt ảnh trượt tự động 4.5s/slide.
@@ -292,12 +299,12 @@ require __DIR__ . '/includes/layout/storefront_top.php';
         ? `<img src="${OF.escapeHtml(p.cover_image)}" alt="${OF.escapeHtml(p.name)}" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')" /><span class="sf-product-emoji hidden">${OF.escapeHtml(p.emoji || '📦')}</span>`
         : `<span class="sf-product-emoji" title="${OF.escapeHtml(p.sku || '')}">${OF.escapeHtml(p.emoji || '📦')}</span>`;
       return `
-        <article class="sf-product group" onclick="location.href='product.php?id=${p.id}'">
+        <article class="sf-product group" onclick="if (!event.target.closest('.sf-quick-add')) location.href='product.php?id=${p.id}'">
           <div class="sf-product-media">
             ${cover}
             ${soldOut ? '<span class="sf-badge sf-badge-out">Hết hàng</span>' : '<span class="sf-badge sf-badge-sale"><i class="fa-solid fa-bolt"></i> -' + discount + '%</span>'}
             ${lowStock ? `<span class="sf-badge sf-badge-low">Chỉ còn ${p.stock}</span>` : ''}
-            <span class="sf-quick-add"><i class="fa-solid fa-eye"></i> Xem nhanh</span>
+            <button type="button" class="sf-quick-add" data-quick-view="${p.id}" aria-label="Xem nhanh ${OF.escapeHtml(p.name)}" onclick="event.stopPropagation(); if (window.OF && OF.quickView) OF.quickView.open(${p.id});"><i class="fa-solid fa-eye"></i> Xem nhanh</button>
           </div>
           <div class="sf-product-body">
             <h3 class="sf-product-name">${OF.escapeHtml(p.name)}</h3>
@@ -328,12 +335,57 @@ require __DIR__ . '/includes/layout/storefront_top.php';
       ).join('');
     }
 
+    function pageNumbers(current, pages) {
+      if (pages <= 7) return Array.from({ length: pages }, (_, i) => i + 1);
+      const out = [1];
+      const start = Math.max(2, current - 2);
+      const end = Math.min(pages - 1, current + 2);
+      if (start > 2) out.push('...');
+      for (let i = start; i <= end; i++) out.push(i);
+      if (end < pages - 1) out.push('...');
+      out.push(pages);
+      return out;
+    }
+
+    function renderProductPagination() {
+      const el = document.getElementById('productPagination');
+      const total = products.length;
+      const pages = Math.max(1, Math.ceil(total / PRODUCTS_PER_PAGE));
+      if (pages <= 1) { el.innerHTML = ''; return; }
+      if (productPage > pages) productPage = pages;
+      const start = (productPage - 1) * PRODUCTS_PER_PAGE;
+      const end = Math.min(start + PRODUCTS_PER_PAGE, total);
+      const nums = pageNumbers(productPage, pages);
+      el.innerHTML =
+        '<p class="sf-page-info">Hiển thị ' + (start + 1) + '–' + end + ' / ' + total + ' sản phẩm</p>' +
+        '<div class="sf-page-list">' +
+          '<button type="button" class="sf-page-btn" data-page="' + (productPage - 1) + '"' + (productPage <= 1 ? ' disabled' : '') + ' aria-label="Trang trước"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>' +
+          nums.map(p => p === '...'
+            ? '<span class="sf-page-dots">…</span>'
+            : '<button type="button" class="sf-page-btn' + (p === productPage ? ' is-active' : '') + '" data-page="' + p + '"' + (p === productPage ? ' aria-current="page"' : '') + '>' + p + '</button>'
+          ).join('') +
+          '<button type="button" class="sf-page-btn" data-page="' + (productPage + 1) + '"' + (productPage >= pages ? ' disabled' : '') + ' aria-label="Trang sau"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>' +
+        '</div>';
+      el.onclick = function (e) {
+        const btn = e.target.closest('[data-page]');
+        if (!btn || btn.disabled) return;
+        const p = Number(btn.dataset.page);
+        if (!p || p === productPage || p < 1 || p > pages) return;
+        productPage = p;
+        renderProducts();
+        grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    }
+
     function renderProducts() {
       if (!products.length) {
         grid.innerHTML = '<div class="col-span-full bg-white rounded-2xl border border-gray-100 p-12 text-center text-gray-500 text-sm">Chưa có sản phẩm đang bán trong hệ thống.</div>';
+        renderProductPagination();
         return;
       }
-      grid.innerHTML = products.map(productCard).join('');
+      const start = (productPage - 1) * PRODUCTS_PER_PAGE;
+      grid.innerHTML = products.slice(start, start + PRODUCTS_PER_PAGE).map(productCard).join('');
+      renderProductPagination();
     }
 
     async function loadProducts() {
@@ -344,6 +396,7 @@ require __DIR__ . '/includes/layout/storefront_top.php';
         return;
       }
       products = res.data.items || [];
+      productPage = 1;
       renderProducts();
       renderSearchChips();
     }
@@ -363,18 +416,24 @@ require __DIR__ . '/includes/layout/storefront_top.php';
         el.innerHTML = '<p class="col-span-full text-sm text-gray-400 text-center">' + OF.escapeHtml(res.message || 'Không tải được danh mục.') + '</p>';
         return;
       }
-      el.innerHTML = (res.data || []).map(c => `
+      categories = res.data || [];
+      el.innerHTML = categories.map(c => `
         <a href="shop.php?category_id=${c.id}" class="sf-cat">
           <span class="sf-cat-icon">${OF.escapeHtml(c.emoji || '📦')}</span>
           <span class="sf-cat-name">${OF.escapeHtml(c.name)}</span>
         </a>`).join('');
+      renderSearchChips();
     }
 
     function renderSearchChips() {
       const wrap = document.getElementById('searchSuggestions');
-      wrap.innerHTML = products.slice(0, 8).map(p =>
+      const catChips = categories.slice(0, 8).map(c =>
+        '<a href="shop.php?q=' + encodeURIComponent(c.name) + '" class="sf-hotkey" title="Danh mục ' + OF.escapeHtml(c.name) + '"><i class="fa-solid fa-layer-group text-[9px]"></i>&nbsp;' + OF.escapeHtml(c.name) + '</a>'
+      ).join('');
+      const productChips = products.slice(0, 8).map(p =>
         '<a href="shop.php?q=' + encodeURIComponent(p.name) + '" class="sf-hotkey">' + OF.escapeHtml(p.name) + '</a>'
-      ).join('') || '<span class="sf-hotkey">Chưa có gợi ý</span>';
+      ).join('');
+      wrap.innerHTML = catChips + productChips || '<span class="sf-hotkey">Chưa có gợi ý</span>';
     }
 
     const cartBadge = document.getElementById('cartBadge');
