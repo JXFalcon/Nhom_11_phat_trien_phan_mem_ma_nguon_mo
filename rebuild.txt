@@ -1,0 +1,9 @@
+Tôi muốn khôi phục toàn bộ mã nguồn của dự án về trạng thái ban đầu, chính xác như trước khi bắt đầu thực hiện bất kỳ yêu cầu nào trong file yeucau.txt.
+
+Yêu cầu thực hiện:
+
+1. Hoàn tác toàn bộ thay đổi đã được thực hiện nhằm đáp ứng các yêu cầu trong file yeucau.txt.
+2. Khôi phục nội dung tất cả file về đúng phiên bản ban đầu trước khi triển khai các yêu cầu đó.
+3. Xóa bỏ những đoạn code, chức năng, cấu hình hoặc file mới được thêm vào trong quá trình thực hiện yeucau.txt.
+4. Không tự ý viết lại code theo cách mới, không tối ưu hóa, không sửa đổi hay bổ sung bất kỳ chức năng nào.
+5. Giữ nguyên cấu trúc thư mục và toàn bộ chức năng vốn có của dự án ban đầu.

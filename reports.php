@@ -5,7 +5,7 @@ $pageTitle = 'Báo cáo thống kê – Shopee';
 $scripts = [
     'assets/js/data.js?v=4',
     'assets/js/api.js?v=4',
-    'assets/js/app.js?v=4',
+    'assets/js/app.js?v=5',
     'assets/js/pages/reports.js?v=4',
 ];
 
@@ -32,14 +32,6 @@ require __DIR__ . '/includes/layout/admin_top.php';
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 9 9"/><path d="m16.5 12 3.5 3.5L23.5 12" transform="scale(0.9) translate(-2 -2)"/></svg>
               Đối chiếu
             </button>
-          </div>
-        </div>
-
-        <div class="alert-banner alert-info">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.2v.2"/></svg>
-          <div>
-            <strong>Dữ liệu mô phỏng</strong>
-            <p>Số liệu tính trực tiếp từ máy chủ trên cơ sở dữ liệu MySQL (API reports/summary).</p>
           </div>
         </div>
 

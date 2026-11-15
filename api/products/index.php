@@ -30,7 +30,8 @@ if ($method === 'GET') {
     $where = [];
     $params = [];
     if ($q !== '') {
-        $where[] = '(p.name LIKE ? OR p.sku LIKE ?)';
+        $where[] = '(p.name LIKE ? OR p.sku LIKE ? OR c.name LIKE ?)';
+        $params[] = "%$q%";
         $params[] = "%$q%";
         $params[] = "%$q%";
     }
@@ -44,7 +45,7 @@ if ($method === 'GET') {
     }
     $w = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
-    $stc = $pdo->prepare("SELECT COUNT(*) FROM products p $w");
+    $stc = $pdo->prepare("SELECT COUNT(*) FROM products p LEFT JOIN categories c ON c.id = p.category_id $w");
     $stc->execute($params);
     $total = (int)$stc->fetchColumn();
 

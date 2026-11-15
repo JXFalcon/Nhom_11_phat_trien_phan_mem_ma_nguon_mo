@@ -57,16 +57,21 @@ require __DIR__ . '/includes/layout/storefront_top.php';
         <p class="text-xs text-gray-400 mb-4">Hãy thử từ khóa khác hoặc bỏ bớt bộ lọc danh mục.</p>
         <a href="shop.php" class="sf-btn sf-btn-soft"><i class="fa-solid fa-rotate-left text-[11px]"></i> Xem tất cả sản phẩm</a>
       </div>
+      <div id="shopPagination" class="sf-pagination" aria-label="Phân trang sản phẩm"></div>
     </div>
   </section>
 
-<?php require __DIR__ . '/includes/layout/storefront_footer.php'; ?>
+<?php
+$scripts = ['assets/js/data.js?v=4', 'assets/js/api.js?v=4', 'assets/js/quick-view.js?v=1'];
+require __DIR__ . '/includes/layout/storefront_footer.php';
+?>
 
 <script>
     (function () {
       const OF = window.OF;
       const grid = document.getElementById('shopGrid');
       const empty = document.getElementById('shopEmpty');
+      const pagination = document.getElementById('shopPagination');
       const catRow = document.getElementById('shopCategoryRow');
       const params = new URLSearchParams(location.search);
       const catId = params.get('category_id') || '';
@@ -74,6 +79,8 @@ require __DIR__ . '/includes/layout/storefront_top.php';
       const searchEl = document.getElementById('searchInput');
       if (searchEl && q) searchEl.value = q;
       let products = [];
+      const PRODUCTS_PER_PAGE = 30;
+      let shopPage = 1;
 
       function renderCats(cats) {
         const base = 'whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-semibold border transition';
@@ -115,12 +122,12 @@ require __DIR__ . '/includes/layout/storefront_top.php';
           ? `<img src="${OF.escapeHtml(p.cover_image)}" alt="${OF.escapeHtml(p.name)}" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.classList.remove('hidden')" /><span class="sf-product-emoji hidden">${OF.escapeHtml(p.emoji || '📦')}</span>`
           : `<span class="sf-product-emoji" title="${OF.escapeHtml(p.sku || '')}">${OF.escapeHtml(p.emoji || '📦')}</span>`;
         return `
-          <article class="sf-product group" onclick="location.href='product.php?id=${p.id}'">
+          <article class="sf-product group" onclick="if (!event.target.closest('.sf-quick-add')) location.href='product.php?id=${p.id}'">
             <div class="sf-product-media">
               ${cover}
               ${soldOut ? '<span class="sf-badge sf-badge-out">Hết hàng</span>' : '<span class="sf-badge sf-badge-sale"><i class="fa-solid fa-bolt"></i> -' + discount + '%</span>'}
               ${lowStock ? `<span class="sf-badge sf-badge-low">Chỉ còn ${p.stock}</span>` : ''}
-              <span class="sf-quick-add"><i class="fa-solid fa-eye"></i> Xem nhanh</span>
+              <button type="button" class="sf-quick-add" data-quick-view="${p.id}" aria-label="Xem nhanh ${OF.escapeHtml(p.name)}" onclick="event.stopPropagation(); if (window.OF && OF.quickView) OF.quickView.open(${p.id});"><i class="fa-solid fa-eye"></i> Xem nhanh</button>
             </div>
             <div class="sf-product-body">
               <h3 class="sf-product-name">${OF.escapeHtml(p.name)}</h3>
@@ -151,15 +158,59 @@ require __DIR__ . '/includes/layout/storefront_top.php';
         ).join('');
       }
 
+      function pageNumbers(current, pages) {
+        if (pages <= 7) return Array.from({ length: pages }, (_, i) => i + 1);
+        const out = [1];
+        const start = Math.max(2, current - 2);
+        const end = Math.min(pages - 1, current + 2);
+        if (start > 2) out.push('...');
+        for (let i = start; i <= end; i++) out.push(i);
+        if (end < pages - 1) out.push('...');
+        out.push(pages);
+        return out;
+      }
+
+      function renderPagination(total, pages, start) {
+        if (pages <= 1) { pagination.innerHTML = ''; return; }
+        const end = Math.min(start + PRODUCTS_PER_PAGE, total);
+        const nums = pageNumbers(shopPage, pages);
+        pagination.innerHTML =
+          '<p class="sf-page-info">Hiển thị ' + (start + 1) + '–' + end + ' / ' + total + ' sản phẩm</p>' +
+          '<div class="sf-page-list">' +
+            '<button type="button" class="sf-page-btn" data-page="' + (shopPage - 1) + '"' + (shopPage <= 1 ? ' disabled' : '') + ' aria-label="Trang trước"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>' +
+            nums.map(p => p === '...'
+              ? '<span class="sf-page-dots">…</span>'
+              : '<button type="button" class="sf-page-btn' + (p === shopPage ? ' is-active' : '') + '" data-page="' + p + '"' + (p === shopPage ? ' aria-current="page"' : '') + '>' + p + '</button>'
+            ).join('') +
+            '<button type="button" class="sf-page-btn" data-page="' + (shopPage + 1) + '"' + (shopPage >= pages ? ' disabled' : '') + ' aria-label="Trang sau"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>' +
+          '</div>';
+        pagination.onclick = function (e) {
+          const btn = e.target.closest('[data-page]');
+          if (!btn || btn.disabled) return;
+          const p = Number(btn.dataset.page);
+          if (!p || p === shopPage || p < 1 || p > pages) return;
+          shopPage = p;
+          render();
+          grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+      }
+
       function render() {
         const list = applySort(products);
         document.getElementById('shopCount').textContent = list.length + ' sản phẩm';
-        if (!list.length) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+        if (!list.length) { grid.innerHTML = ''; pagination.innerHTML = ''; empty.classList.remove('hidden'); return; }
         empty.classList.add('hidden');
-        grid.innerHTML = list.map(productCard).join('');
+        const pages = Math.max(1, Math.ceil(list.length / PRODUCTS_PER_PAGE));
+        if (shopPage > pages) shopPage = pages;
+        const start = (shopPage - 1) * PRODUCTS_PER_PAGE;
+        grid.innerHTML = list.slice(start, start + PRODUCTS_PER_PAGE).map(productCard).join('');
+        renderPagination(list.length, pages, start);
       }
 
-      document.getElementById('shopSort').addEventListener('change', render);
+      document.getElementById('shopSort').addEventListener('change', function () {
+        shopPage = 1;
+        render();
+      });
 
       (async function boot() {
         renderSkeletons(10);
