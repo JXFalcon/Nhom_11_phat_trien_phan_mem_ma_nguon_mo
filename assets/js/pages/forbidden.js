@@ -26,7 +26,7 @@
 
   const ROLE_ALLOWED_PAGES = {
     admin: ["index.php", "reports.php", "products.php", "categories.php"],
-    staff: ["index.php", "reports.php", "products.php", "categories.php"],
+    staff: ["index.php", "products.php", "categories.php"],
     customer: [],
   };
 
@@ -48,7 +48,10 @@
       msgEl.textContent =
         "Tài khoản " + ((user || {}).full_name || "của bạn") +
         " đang đăng nhập với vai trò " + (ROLE_LABELS[role] || role || "không xác định") +
-        " nên không được mở “" + name + "”. Trang này chỉ dành cho quản trị viên và nhân viên xử lý đơn.";
+        " nên không được mở “" + name + "”. " +
+        (role === "staff"
+          ? "Trang này chỉ dành cho quản trị viên."
+          : "Trang này chỉ dành cho quản trị viên và nhân viên xử lý đơn.");
     }
 
     const set = (id, val) => {
@@ -62,7 +65,7 @@
     const home = document.getElementById("goHomeBtn");
     if (home) {
       home.textContent = role === "customer" ? "Đi tới Đơn hàng của tôi" : "Về trang tổng quan";
-      home.setAttribute("href", role === "customer" ? "orders.php" : "index.php");
+      home.setAttribute("href", role === "customer" ? "orders.php" : "dashboard.php");
     }
 
     const adminBtn = document.getElementById("goAdminBtn");

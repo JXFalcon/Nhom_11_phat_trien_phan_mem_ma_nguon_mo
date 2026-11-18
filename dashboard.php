@@ -22,7 +22,7 @@ require __DIR__ . '/includes/layout/admin_top.php';
             <p>Số liệu đồng bộ trực tiếp từ cơ sở dữ liệu MySQL qua API — doanh thu không tính đơn đã hủy.</p>
           </div>
           <div class="page-actions">
-            <a class="btn" href="reports.php">Xem báo cáo</a>
+            <a class="btn" href="reports.php" data-role-only="admin">Xem báo cáo</a>
             <button class="btn btn-primary" id="btnRefresh">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-.8 4.5"/><path d="M20 4.5V11h-6.5"/></svg>
               Làm mới dữ liệu

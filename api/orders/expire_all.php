@@ -2,7 +2,7 @@
 /**
  * /api/orders/expire_all.php
  * POST - Hết hạn tất cả đơn chờ xác nhận quá thời gian giữ hàng.
- * Cho phép cron localhost hoặc admin/staff đã đăng nhập.
+ * Cho phép cron localhost hoặc admin đã đăng nhập.
  */
 declare(strict_types=1);
 require_once __DIR__ . '/../../includes/auth.php';
@@ -16,7 +16,7 @@ $remote = $_SERVER['REMOTE_ADDR'] ?? '';
 $isLocal = in_array($remote, ['127.0.0.1', '::1', 'localhost'], true);
 $u = null;
 if (!$isLocal) {
-    $u = require_role('admin', 'staff');
+    $u = require_role('admin');
 }
 
 $pdo = db();

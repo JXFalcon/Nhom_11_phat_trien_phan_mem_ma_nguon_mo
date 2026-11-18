@@ -66,6 +66,10 @@ Vào `products.php` → **Sửa sản phẩm** → dán 4–5 URL vào ô **Ản
 - `nhanvien@orderflow.vn` / `123456` – staff
 - `khachhang@orderflow.vn` / `123456` – customer
 
+### 0.6.1 Phân quyền admin / nhân viên
+- **Admin**: toàn quyền, gồm báo cáo thống kê, đối chiếu, hủy đơn, cho hết hạn giữ hàng, hoàn tất đổi trả/hoàn tiền, đánh dấu thanh toán thất bại, quản lý sản phẩm & danh mục.
+- **Nhân viên (staff)**: xử lý nghiệp vụ hằng ngày – xem dashboard, xác nhận/giao đơn, cập nhật giao hàng, chấp nhận/từ chối đổi trả, xác nhận thanh toán thành công, xác nhận/giải phóng giữ hàng. Không được hủy đơn, không đánh dấu hết hạn giữ hàng, không hoàn tất đổi trả/hoàn tiền, không đánh dấu thanh toán thất bại, không vào báo cáo thống kê và không sửa sản phẩm/danh mục (chỉ xem).
+
 ### 0.7 Cấu hình nhận tiền QR (chuyển khoản thật)
 1. Sao chép `config/payment.local.example.php` → `config/payment.local.php` (file local đã được `.gitignore`).
 2. Điền:
@@ -105,8 +109,8 @@ Mã QR dùng dịch vụ ảnh VietQR (`img.vietqr.io`), quét được bằng a
 ## 2. Tự động hóa expire đơn hàng
 
 ### API mới
-- `POST /api/orders/expire.php` – admin/staff bấm nút trên UI đơn hàng để hết hạn đơn đơn lẻ
-- `POST /api/orders/expire_all.php` – gọi bằng cron (cho localhost hoặc admin/staff)
+- `POST /api/orders/expire.php` – admin bấm nút trên UI đơn hàng để hết hạn đơn đơn lẻ
+- `POST /api/orders/expire_all.php` – gọi bằng cron (cho localhost hoặc admin)
 
 ### Cron (chạy mỗi 5 phút)
 ```bash
@@ -122,7 +126,7 @@ Xem chi tiết file `cron_expire.txt`.
 - Ghi `order_history`
 
 ### Frontend
-- Trang `orders.php`: nút đồng hồ (🕒) trên đơn `Chờ xác nhận` → gọi `expire.php`
+- Trang `orders.php`: nút đồng hồ (🕒) trên đơn `Chờ xác nhận` (chỉ admin) → gọi `expire.php`
 - Cột đếm ngrosso "Hết hạn sau Xp Ys" (đổi màu khi <5 phút, đỏ khi đã hết hạn)
 
 ---
@@ -136,14 +140,14 @@ Xem chi tiết file `cron_expire.txt`.
 
 ### Frontend
 - Trang `reservations.php` (menu "Quản lý giữ hàng", chỉ admin/staff)
-- Nút: Xác nhận (pending → confirmed, trừ kho thật), Giải phóng, Hết hạn
+- Nút: Xác nhận (pending → confirmed, trừ kho thật), Giải phóng; riêng **Hết hạn** chỉ admin thấy
 
 ### Cách kiểm thử
 1. Đăng nhập admin/staff → vào `reservations.php`.
 2. Xem danh sách reservation pending.
 3. Bấm "Xác nhận" → kiểm tra `products.stock` đã giảm, reservation status = `confirmed`.
 4. Bấm "Giải phóng" → reservation status = `released`, kho không bị ảnh hưởng (chưa từng trừ).
-5. Bấm "Hết hạn" → reservation status = `expired`.
+5. (Admin) Bấm "Hết hạn" → reservation status = `expired`.
 
 ---
 
@@ -151,10 +155,10 @@ Xem chi tiết file `cron_expire.txt`.
 
 ### API
 - `GET /api/reports/summary.php?export=csv&days=7|30|60|all` → tải file CSV BOM UTF-8.
-- API yêu cầu Bearer token của admin/staff (giống mọi API quản trị).
+- API yêu cầu Bearer token của admin (nhân viên không có quyền xem báo cáo).
 
 ### Cách kiểm thử
-1. Đăng nhập admin/staff → vào `reports.php` → bấm **Xuất CSV**. Trình duyệt gọi API kèm token và tải file.
+1. Đăng nhập admin → vào `reports.php` → bấm **Xuất CSV**. Trình duyệt gọi API kèm token và tải file.
 2. Hoặc dùng curl với token lấy từ `localStorage["orderflow.token"]`:
    ```bash
    curl -H "Authorization: Bearer <token>" -o bao_cao.csv \
