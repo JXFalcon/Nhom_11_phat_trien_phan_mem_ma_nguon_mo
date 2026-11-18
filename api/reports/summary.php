@@ -17,6 +17,9 @@ $pdo = db();
 
 /* Xuất báo cáo CSV */
 if ((string)($_GET['export'] ?? '') === 'csv') {
+    if ($u['role'] !== 'admin') {
+        json_fail('Chỉ quản trị viên được xuất báo cáo CSV.', 403);
+    }
     $daysParam = (string)($_GET['days'] ?? 'all');
     $days = in_array($daysParam, ['7', '30', '60'], true) ? (int)$daysParam : null;
 

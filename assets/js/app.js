@@ -62,7 +62,7 @@
    * nút xử lý nội bộ bị ẩn qua canManage()). Các trang quản trị còn lại chỉ
    * admin/staff dùng. index.php là storefront công khai, không tải app.js. */
   const PAGE_ROLES = {
-    "reports.php": ["admin", "staff"],
+    "reports.php": ["admin"],
     "products.php": ["admin", "staff"],
     "categories.php": ["admin", "staff"],
     "dashboard.php": ["admin", "staff"],
@@ -92,6 +92,18 @@
   /* Trang khách hàng được dùng sau khi đăng nhập */
   function homePageFor(role) {
     return role === "customer" ? "orders.php" : "dashboard.php";
+  }
+
+  /* Ẩn phần tử chỉ dành cho vai trò cụ thể: data-role-only="admin" */
+  function applyRoleVisibility() {
+    const role = currentRole();
+    document.querySelectorAll("[data-role-only]").forEach((el) => {
+      const allowed = String(el.getAttribute("data-role-only") || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (allowed.indexOf(role) === -1) el.style.display = "none";
+    });
   }
 
   const NAV = [
@@ -485,6 +497,7 @@
     if (!guard()) return;
     renderSidebar();
     renderTopbar();
+    applyRoleVisibility();
     // Xác thực phiên với backend (đồng thời làm mới thông tin user)
     if (OF.session.getToken()) {
       (async function verifySession() {
@@ -502,6 +515,7 @@
         }
         renderSidebar();
         renderTopbar();
+        applyRoleVisibility();
       })();
     }
     // Đóng sidebar khi bấm overlay (mobile)

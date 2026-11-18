@@ -11,6 +11,9 @@
   let statusF = "";
   let rowsCache = [];
 
+  const role = () => (OF.session.getUser() || {}).role || "customer";
+  const isAdmin = () => role() === "admin";
+
   const RESERVATION_STATUS = {
     pending: { label: "Đang giữ", badge: "badge-orange" },
     confirmed: { label: "Đã xác nhận", badge: "badge-green" },
@@ -54,7 +57,9 @@
       const actions = r.status === 'pending'
         ? '<button class="btn btn-sm btn-success" data-confirm="' + r.id + '">' + OF.icon("check", "icon-sm") + " Xác nhận" + '</button>' +
           '<button class="btn btn-sm" data-release="' + r.id + '" style="color:var(--danger)">' + OF.icon("close", "icon-sm") + " Giải phóng" + '</button>' +
-          '<button class="btn btn-sm" data-expire="' + r.id + '" style="color:#b45309">' + OF.icon("clock", "icon-sm") + " Hết hạn" + '</button>'
+          (isAdmin()
+            ? '<button class="btn btn-sm" data-expire="' + r.id + '" style="color:#b45309">' + OF.icon("clock", "icon-sm") + " Hết hạn" + '</button>'
+            : "")
         : '<button class="btn btn-sm btn-icon" data-info="' + r.id + '" title="Xem chi tiết">' + OF.icon("info", "icon-sm") + "</button>";
       return "<tr>" +
         "<td><strong>" + OF.escapeHtml(r.reservation_code) + "</strong></td>" +
@@ -83,6 +88,7 @@
   }
 
   async function changeStatus(id, newStatus) {
+    if (newStatus === "expired" && !isAdmin()) return;
     const r = rowsCache.find((x) => x.id === id);
     if (!r) return;
     const label = { confirmed: "Xác nhận giữ hàng", released: "Giải phóng giữ hàng", expired: "Đánh dấu hết hạn" }[newStatus];

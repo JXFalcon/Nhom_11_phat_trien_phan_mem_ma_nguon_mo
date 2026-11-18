@@ -20,6 +20,9 @@ $idem = trim((string)($in['idempotency_key'] ?? ''));
 if ($id <= 0 || !in_array($result, ['thanh_cong', 'that_bai'], true)) {
     json_fail('Thiếu id giao dịch hoặc kết quả mô phỏng không hợp lệ.', 422);
 }
+if ($result === 'that_bai' && $u['role'] !== 'admin') {
+    json_fail('Chỉ quản trị viên được đánh dấu thanh toán thất bại.', 403);
+}
 if (mb_strlen($idem) > 64) {
     json_fail('Idempotency key tối đa 64 ký tự.', 422);
 }

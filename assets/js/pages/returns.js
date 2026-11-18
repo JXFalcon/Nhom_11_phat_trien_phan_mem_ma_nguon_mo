@@ -13,6 +13,7 @@
   let statusF = "";
   let rowsCache = [];
   const role = () => (OF.session.getUser() || {}).role || "customer";
+  const isAdmin = () => role() === "admin";
   const canManage = () => role() === "admin" || role() === "staff";
 
   const NEXT_RETURN = {
@@ -21,6 +22,11 @@
     tu_choi: [],
     da_hoan_tat: ["da_hoan_tat"],
   };
+
+  /* Nhân viên chỉ chấp nhận/từ chối; hoàn tất & hoàn tiền do admin. */
+  function nextReturnStatuses(status) {
+    return (NEXT_RETURN[status] || []).filter((s) => isAdmin() || s !== "da_hoan_tat");
+  }
 
   function refundOf(r) {
     if (Array.isArray(r.items) && r.items.length) {
@@ -67,7 +73,7 @@
         "<td>" + OF.badgeHTML(OF.RETURN_STATUS, r.status) + "</td>" +
         '<td><div class="cell-actions">' +
           '<button class="btn btn-sm btn-icon" data-view="' + r.id + '" title="Xem chi tiết">' + OF.icon("eye", "icon-sm") + "</button>" +
-          (canManage() && NEXT_RETURN[r.status] && NEXT_RETURN[r.status].length
+          (canManage() && nextReturnStatuses(r.status).length
             ? '<button class="btn btn-sm btn-icon" data-status="' + r.id + '" title="Cập nhật trạng thái">' + OF.icon("refresh", "icon-sm") + "</button>"
             : "") +
         "</div></td>" +
@@ -94,7 +100,7 @@
     const requested = Number(r.qty_requested_total || r.qty_requested || 0);
     const delivered = Number(r.qty_delivered || 0);
     const accepted = Number(r.qty_accepted_total || r.qty_accepted || 0);
-    const nexts = NEXT_RETURN[r.status] || [];
+    const nexts = nextReturnStatuses(r.status);
 
     const body =
       '<div class="detail-grid">' +
@@ -170,7 +176,7 @@
   function openStatusModal(id) {
     const r = rowsCache.find((x) => x.id === id);
     if (!r) return;
-    const nexts = NEXT_RETURN[r.status] || [];
+    const nexts = nextReturnStatuses(r.status);
     if (!nexts.length) {
       OF.ui.toast("info", "Yêu cầu ở trạng thái “" + OF.RETURN_STATUS[r.status].label + "” không còn bước tiếp theo.");
       return;

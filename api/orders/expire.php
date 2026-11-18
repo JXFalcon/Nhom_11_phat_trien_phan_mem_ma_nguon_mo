@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../includes/order_lifecycle.php';
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     json_fail('Chỉ chấp nhận POST.', 405);
 }
-$u = require_role('admin', 'staff');
+$u = require_role('admin');
 $in = request_json();
 $onlyId = (int)($in['id'] ?? $_GET['id'] ?? 0);
 

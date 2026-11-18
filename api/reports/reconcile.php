@@ -16,7 +16,7 @@ if (!in_array(($_SERVER['REQUEST_METHOD'] ?? ''), ['GET', 'POST'], true)) {
     json_fail('Chỉ chấp nhận GET/POST.', 405);
 }
 
-$u = require_role('admin', 'staff');
+$u = require_role('admin');
 $limit = max(1, min(200, (int)($_GET['limit'] ?? 50)));
 $pdo = db();
 

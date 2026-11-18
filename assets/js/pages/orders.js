@@ -15,6 +15,7 @@
   let dateTo = "";
   let ordersCache = [];
   const role = () => (OF.session.getUser() || {}).role || "customer";
+  const isAdmin = () => role() === "admin";
   const canManage = () => role() === "admin" || role() === "staff";
 
   /* Vòng đời đơn (hiển thị lựa chọn; server là nguồn quyết định) */
@@ -71,10 +72,10 @@
           (canManage() && NEXT_STATUS[o.status] && NEXT_STATUS[o.status].length
             ? '<button class="btn btn-sm btn-icon" data-status="' + o.id + '" title="Cập nhật trạng thái">' + OF.icon("refresh", "icon-sm") + "</button>"
             : "") +
-          (canManage() && o.status !== "da_huy" && o.status !== "da_giao"
+          (isAdmin() && o.status !== "da_huy" && o.status !== "da_giao"
             ? '<button class="btn btn-sm btn-icon" data-cancel="' + o.id + '" title="Hủy đơn" style="color:var(--danger)">' + OF.icon("close", "icon-sm") + "</button>"
             : "") +
-          (canManage() && o.status === "cho_xac_nhan"
+          (isAdmin() && o.status === "cho_xac_nhan"
             ? '<button class="btn btn-sm btn-icon" data-expire="' + o.id + '" title="Hết hạn giữ hàng" style="color:#b45309">' + OF.icon("clock", "icon-sm") + "</button>"
             : "") +
         "</div></td>" +
@@ -222,7 +223,7 @@
   function openStatusModal(orderId) {
     const o = ordersCache.find((x) => x.id === orderId);
     if (!o) return;
-    const nexts = NEXT_STATUS[o.status] || [];
+    const nexts = (NEXT_STATUS[o.status] || []).filter((s) => isAdmin() || s !== "da_huy");
     if (!nexts.length) {
       OF.ui.toast("info", "Đơn ở trạng thái “" + OF.ORDER_STATUS[o.status].label + "” không còn bước tiếp theo.");
       return;
@@ -260,6 +261,7 @@
 
   /* ---------- Hủy đơn ---------- */
   function cancelOrder(orderId) {
+    if (!isAdmin()) return;
     const o = ordersCache.find((x) => x.id === orderId);
     if (!o) return;
     OF.ui.confirm({
@@ -278,6 +280,7 @@
 
   /* ---------- Hết hạn giữ hàng ---------- */
   function expireOrder(orderId) {
+    if (!isAdmin()) return;
     const o = ordersCache.find((x) => x.id === orderId);
     if (!o) return;
     OF.ui.confirm({

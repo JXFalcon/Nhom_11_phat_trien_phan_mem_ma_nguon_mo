@@ -24,6 +24,10 @@ $id = (int)($in['id'] ?? 0);
 $to = (string)($in['to_status'] ?? '');
 $note = trim((string)($in['note'] ?? ''));
 
+if ($to === 'da_hoan_tat' && $u['role'] !== 'admin') {
+    json_fail('Chỉ quản trị viên được hoàn tất đổi trả và tạo hoàn tiền.', 403);
+}
+
 $allowed = [
     'cho_xu_ly' => ['da_chap_nhan', 'tu_choi'],
     'da_chap_nhan' => ['da_hoan_tat', 'tu_choi'],

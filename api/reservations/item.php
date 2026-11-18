@@ -89,6 +89,9 @@ $note = trim((string)($in['note'] ?? ''));
 if (!in_array($newStatus, ['confirmed', 'released', 'expired'], true)) {
     json_fail('Trạng thái không hợp lệ.', 422);
 }
+if ($newStatus === 'expired' && $u['role'] !== 'admin') {
+    json_fail('Chỉ quản trị viên được đánh dấu hết hạn phiếu giữ hàng.', 403);
+}
 
 $pdo->beginTransaction();
 try {

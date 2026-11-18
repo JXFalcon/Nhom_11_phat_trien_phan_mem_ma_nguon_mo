@@ -14,6 +14,10 @@ $u = require_role('admin', 'staff');
 $in = request_json();
 $id = (int)($in['id'] ?? 0);
 $to = (string)($in['to_status'] ?? '');
+
+if ($to === 'da_huy' && $u['role'] !== 'admin') {
+    json_fail('Chỉ quản trị viên được hủy đơn hàng.', 403);
+}
 $note = trim((string)($in['note'] ?? ''));
 
 $allowed = [

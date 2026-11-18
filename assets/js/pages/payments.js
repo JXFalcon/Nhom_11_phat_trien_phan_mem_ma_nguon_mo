@@ -15,6 +15,7 @@
   let methodF = "";
   let rowsCache = [];
   const role = () => (OF.session.getUser() || {}).role || "customer";
+  const isAdmin = () => role() === "admin";
   const canManage = () => role() === "admin" || role() === "staff";
 
   async function loadPayments() {
@@ -53,7 +54,7 @@
         ? '<button class="btn btn-sm btn-success" data-ok="' + p.id + '" title="' +
             (retryable ? "Thử lại thanh toán với idempotency key mới" : "Mô phỏng thanh toán thành công") + '">' +
             OF.icon("check", "icon-sm") + " " + (retryable ? "Thử lại" : "Thành công") + "</button>" +
-          (pending
+          (pending && isAdmin()
             ? '<button class="btn btn-sm" data-fail="' + p.id + '" title="Mô phỏng thất bại" style="color:var(--danger)">' +
               OF.icon("close", "icon-sm") + " Thất bại</button>"
             : "")
@@ -99,6 +100,7 @@
   }
 
   function simulate(id, result) {
+    if (result === "that_bai" && !isAdmin()) return;
     const p = rowsCache.find((x) => x.id === id);
     if (!p) return;
     if (p.status === "thanh_cong" || p.status === "hoan_tien") {
